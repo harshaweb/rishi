@@ -1,0 +1,239 @@
+.lead-form {
+  padding: clamp(24px, 3vw, 44px);
+  border-radius: 24px;
+  border-color: #e2e8f3;
+  box-shadow: 0 20px 65px #142a570b;
+}
+.lead-form .form-heading {
+  padding-bottom: 26px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid #e9edf5;
+}
+.form-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #4164d5;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  margin-bottom: 14px;
+}
+.form-kicker > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4268ff;
+  box-shadow: 0 0 0 4px #edf1ff;
+}
+.lead-form .form-heading h3 {
+  font-size: clamp(23px, 2.2vw, 31px);
+  line-height: 1.25;
+  letter-spacing: -0.045em;
+  max-width: 440px;
+  margin-bottom: 12px;
+}
+.lead-form .form-heading > span {
+  font-size: 12px;
+  color: #778399;
+}
+.enquiry-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0 0 12px;
+  min-width: 0;
+}
+.enquiry-fieldset legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 0 0 20px;
+  font-size: 14px;
+  font-weight: 650;
+  color: #24344c;
+}
+.enquiry-fieldset legend > span {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  border: 1px solid #e2e8f7;
+  background: #f4f7ff;
+  border-radius: 9px;
+  color: #4264d7;
+  font-size: 10px;
+}
+.lead-form .form-grid {
+  gap: 0 20px;
+}
+.lead-form .field {
+  gap: 9px;
+  margin-bottom: 22px;
+}
+.lead-form .field > label {
+  font-size: 12px;
+  color: #42516a;
+  font-weight: 550;
+}
+.lead-form .field input,
+.lead-form .field textarea,
+.lead-form .field select {
+  border-radius: 10px;
+  padding: 14px;
+  min-height: 49px;
+  font-size: 13px;
+  background: #f9fbff;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.lead-form .field input:focus,
+.lead-form .field textarea:focus,
+.lead-form .field select:focus {
+  outline: none;
+  background: white;
+  border-color: #4268ff;
+  box-shadow: 0 0 0 3px #4268ff18;
+}
+.lead-form .field textarea {
+  min-height: 125px;
+}
+.lead-form .check-label {
+  font-size: 11px;
+  line-height: 1.8;
+}
+.lead-form .check-label input {
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+}
+.lead-form .form-bottom {
+  border-top: 1px solid #e9edf5;
+  padding-top: 24px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+.lead-form .form-bottom > span {
+  font-size: 10px;
+}
+.lead-form .form-bottom .button {
+  min-height: 48px;
+  font-size: 12px;
+  padding: 14px 20px;
+  border-radius: 10px;
+  box-shadow: 0 6px 16px #365dff23;
+}
+.project-enquiry.contact-grid {
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+  align-items: start;
+  gap: clamp(28px, 4vw, 64px);
+  padding-top: 48px;
+}
+.project-enquiry-aside {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(28px, 3vw, 44px);
+  border: 1px solid #263960;
+  border-radius: 24px;
+  background:
+    radial-gradient(ellipse at 100% 0, #274780, transparent 65%), #101d36;
+  color: #d5dfef;
+}
+.project-enquiry-aside > .eyebrow {
+  color: #a2b7ff;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+.project-enquiry .project-enquiry-aside > h2 {
+  color: white;
+  font-size: clamp(30px, 3.2vw, 46px);
+  line-height: 1.15;
+  letter-spacing: -0.045em;
+  margin: 22px 0;
+}
+.project-enquiry .project-enquiry-aside > p {
+  color: #b2c2dc;
+  font-size: 13px;
+  max-width: 360px;
+}
+.project-enquiry-aside .contact-steps {
+  margin: 34px 0;
+}
+.project-enquiry-aside .contact-steps > div {
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.project-enquiry-aside .contact-steps > div > span {
+  background: #ffffff09;
+  color: #a8bdff;
+  border-color: #ffffff20;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+}
+.project-enquiry-aside .contact-steps p {
+  font-size: 12px;
+  color: #d4def0;
+  padding-top: 5px;
+}
+.project-enquiry-aside .contact-channels > a {
+  background: #ffffff08;
+  color: white;
+  border-color: #ffffff20;
+}
+.project-enquiry-aside .contact-channels small {
+  color: #aabbd7;
+}
+.project-enquiry-aside .contact-channels > a > svg {
+  color: #98b3ff;
+}
+.project-enquiry-aside .contact-channels > a:hover {
+  background: #ffffff12;
+  border-color: #809ce8;
+}
+.project-enquiry-aside .contact-privacy {
+  border-color: #ffffff20;
+  color: #aabbd7;
+  max-width: none;
+  margin-top: 28px;
+}
+.project-enquiry-aside .contact-privacy p {
+  margin-bottom: 0;
+  font-size: 11px;
+}
+@media (max-width: 900px) {
+  .project-enquiry.contact-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .project-enquiry .project-enquiry-aside > p {
+    max-width: 600px;
+  }
+}
+@media (max-width: 540px) {
+  .lead-form {
+    padding: 24px 20px;
+    border-radius: 18px;
+  }
+  .lead-form .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lead-form .field input,
+  .lead-form .field textarea,
+  .lead-form .field select {
+    font-size: 16px;
+  }
+  .lead-form .form-bottom {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+  }
+  .lead-form .form-bottom > span {
+    justify-content: center;
+    order: 2;
+  }
+  .project-enquiry-aside {
+    border-radius: 18px;
+  }
+}

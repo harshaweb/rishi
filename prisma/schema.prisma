@@ -1,0 +1,271 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL
+  WON
+  CLOSED
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  name         String
+  passwordHash String
+  role         Role       @default(STAFF)
+  active       Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  notes        LeadNote[]
+  logs         AuditLog[]
+}
+
+model Lead {
+  id           String     @id @default(cuid())
+  reference    String     @unique
+  submissionId String     @unique
+  name         String
+  email        String
+  phone        String
+  company      String
+  website      String?
+  service      String
+  budget       String
+  timeline     String
+  message      String
+  kind         String     @default("quote")
+  consentAt    DateTime
+  status       LeadStatus @default(NEW)
+  followUpAt   DateTime?
+  emailStatus  String     @default("not-configured")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  notes        LeadNote[]
+
+  @@index([status, createdAt])
+  @@index([email])
+}
+
+model LeadNote {
+  id        String   @id @default(cuid())
+  body      String
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+
+  @@index([leadId, createdAt])
+}
+
+model Service {
+  id             String             @id @default(cuid())
+  slug           String             @unique
+  title          String
+  headline       String
+  description    String
+  category       String
+  benefits       String[]
+  process        String[]
+  body           String
+  published      Boolean            @default(false)
+  seoTitle       String             @default("")
+  seoDescription String             @default("")
+  order          Int                @default(0)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  faqs           FAQ[]
+  projects       PortfolioProject[]
+
+  @@index([published, order])
+}
+
+model Industry {
+  id             String             @id @default(cuid())
+  slug           String             @unique
+  title          String
+  description    String
+  benefits       String[]
+  body           String
+  published      Boolean            @default(false)
+  seoTitle       String             @default("")
+  seoDescription String             @default("")
+  order          Int                @default(0)
+  projects       PortfolioProject[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([published, order])
+}
+
+model PortfolioProject {
+  id             String    @id @default(cuid())
+  slug           String    @unique
+  title          String
+  description    String
+  body           String
+  industry       String
+  industryId     String?
+  industryRecord Industry? @relation(fields: [industryId], references: [id], onDelete: SetNull)
+  services       String[]
+  serviceRecords Service[]
+  technologies   String[]
+  demo           Boolean   @default(true)
+  cover          String
+  gallery        String[]
+  url            String    @default("")
+  results        String    @default("")
+  seoTitle       String    @default("")
+  seoDescription String    @default("")
+  published      Boolean   @default(false)
+  order          Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([published, order])
+}
+
+model BlogCategory {
+  id    String     @id @default(cuid())
+  slug  String     @unique
+  title String
+  posts BlogPost[]
+}
+
+model BlogTag {
+  id    String     @id @default(cuid())
+  slug  String     @unique
+  title String
+  posts BlogPost[]
+}
+
+model BlogPost {
+  id             String        @id @default(cuid())
+  slug           String        @unique
+  title          String
+  description    String
+  body           String
+  categoryId     String?
+  category       BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags           BlogTag[]
+  status         PostStatus    @default(DRAFT)
+  cover          String
+  featured       Boolean       @default(false)
+  seoTitle       String        @default("")
+  seoDescription String        @default("")
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([status, publishedAt])
+}
+
+model FAQ {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  published Boolean  @default(false)
+  order     Int      @default(0)
+  serviceId String?
+  service   Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+}
+
+model TeamMember {
+  id        String  @id @default(cuid())
+  name      String
+  role      String
+  bio       String
+  photo     String  @default("")
+  published Boolean @default(false)
+  order     Int     @default(0)
+}
+
+model Job {
+  id           String           @id @default(cuid())
+  slug         String           @unique
+  title        String
+  location     String
+  type         String
+  description  String
+  body         String
+  published    Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  applications JobApplication[]
+}
+
+model JobApplication {
+  id        String      @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  portfolio String      @default("")
+  consentAt DateTime
+  jobId     String?
+  job       Job?        @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  resumeId  String?     @unique
+  resume    MediaAsset? @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  status    String      @default("NEW")
+  createdAt DateTime    @default(now())
+
+  @@index([createdAt])
+  @@index([email])
+}
+
+model NewsletterSubscriber {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  consentAt        DateTime
+  unsubscribeToken String   @unique @default(uuid())
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+}
+
+model MediaAsset {
+  id          String          @id @default(cuid())
+  filename    String
+  key         String          @unique
+  mime        String
+  size        Int
+  alt         String          @default("")
+  public      Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  application JobApplication?
+}
+
+model SiteSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  recordId  String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

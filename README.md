@@ -122,7 +122,7 @@ Live email delivery has not been verified because credentials were not supplied.
 
 Development files are saved under ignored `.data/uploads`. Production uploads require a private S3-compatible bucket: configure `S3_BUCKET`, `S3_REGION`, optional `S3_ENDPOINT` and standard AWS credentials or workload identity. Use bucket encryption, deny anonymous access, and grant only the required get/put/delete permissions.
 
-Admin uploads accept one PNG/JPEG/WebP image up to 5 MB with alternative text. MIME types are checked against file signatures. `/media/:id` serves only assets explicitly marked public. Résumés accept PDF only, reject common active-content indicators and are downloadable only through an authenticated staff endpoint as attachments. These checks are not antivirus scanning; add an approved malware-scanning service before accepting uploads in an untrusted high-volume production environment. Résumés are removed with their application. Images referenced by content cannot be deleted until unlinked.
+Admin uploads accept one PNG/JPEG/WebP image up to 4 MB with alternative text. MIME types are checked against file signatures. `/media/:id` serves only assets explicitly marked public. Résumés accept PDF only, reject common active-content indicators and are downloadable only through an authenticated staff endpoint as attachments. These checks are not antivirus scanning; add an approved malware-scanning service before accepting uploads in an untrusted high-volume production environment. Résumés are removed with their application. Images referenced by content cannot be deleted until unlinked.
 
 Live S3 access has not been verified because credentials were not supplied.
 
@@ -134,7 +134,7 @@ No measurement IDs were supplied, so live collection has not been verified. Revi
 
 ## Production deployment
 
-Use a Node-compatible host (for example a container service, Render or Railway) with managed PostgreSQL and private object storage. This app requires a persistent Node server; deploying `dist` alone loses the API and SSR. The existing Vite setup was intentionally preserved instead of switching the repository to Next.js. Vercel would require adapting the Express server to that platform's serverless model.
+Use a Node-compatible host (for example a container service, Render or Railway) with managed PostgreSQL and private object storage. This app requires a persistent Node server; deploying `dist` alone loses the API and SSR. The existing Vite setup was intentionally preserved instead of switching the repository to Next.js. Vercel is supported by the function adapter and routing in api/index.ts and vercel.json; see VERCEL-SETUP.md for managed database and deployment settings.
 
 1. Provision a managed PostgreSQL database and separate migration/runtime roles. The runtime role needs CRUD on application, Session and RateLimit tables, plus sequence access; it does not need schema-changing or superuser privileges.
 2. Set a production `DATABASE_URL`, a cryptographically random `SESSION_SECRET`, `NODE_ENV=production`, `SITE_URL=https://www.harshaweb.com`, and the host's `PORT`. Set `HOST=0.0.0.0` inside a container.

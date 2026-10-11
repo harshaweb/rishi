@@ -11,5 +11,5 @@
     "types": ["node"],
     "allowImportingTsExtensions": true
   },
-  "include": ["server", "scripts", "shared"]
+  "include": ["api", "server", "scripts", "shared"]
 }

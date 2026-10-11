@@ -1,0 +1,234 @@
+.why-section {
+  padding-block: clamp(36px, 4vw, 56px);
+  background: linear-gradient(135deg, #f6f8fd, #fff 75%);
+}
+.why-section .why-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 56px);
+}
+.why-section .why-visual {
+  height: 430px;
+  border-radius: 22px;
+  border-color: #23365a;
+  background: radial-gradient(
+    ellipse at 50% 42%,
+    #284985 0%,
+    #14233e 48%,
+    #0d182c 85%
+  );
+  box-shadow: 0 24px 60px #172b5117;
+}
+.approach-visual-heading {
+  position: absolute;
+  inset: 24px 24px auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #afc0df;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+}
+.approach-visual-heading > span:last-child {
+  color: #7287ab;
+}
+.why-section .why-visual-grid {
+  background-image:
+    linear-gradient(#a2b7e412 1px, transparent 1px),
+    linear-gradient(90deg, #a2b7e412 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(ellipse, #000, transparent 80%);
+}
+.why-section .why-orbit {
+  width: 260px;
+  height: 260px;
+  transform: translateY(-15px);
+  border-color: #aac3ff30;
+  background: repeating-radial-gradient(
+    circle,
+    transparent 0,
+    transparent 57px,
+    #b1c8ff18 58px,
+    #b1c8ff18 59px
+  );
+}
+.why-section .why-core {
+  width: 94px;
+  height: 94px;
+  border-radius: 24px;
+  background: linear-gradient(140deg, #7097ff, #345cff 60%, #2648d6);
+  box-shadow:
+    0 0 70px #527eff3b,
+    inset 1px 1px 1px #b6c7ff;
+}
+.why-section .orbit-node {
+  width: 78px;
+  height: 64px;
+  gap: 5px;
+  align-content: center;
+  border-radius: 16px;
+  background: #1c3154;
+  border-color: #96b1e83b;
+  color: #c4d5ff;
+  box-shadow: 0 10px 25px #030e2533;
+}
+.why-section .orbit-node b {
+  font-size: 9px;
+  font-weight: 500;
+}
+.why-section .node-a {
+  left: -8px;
+  top: 20px;
+}
+.why-section .node-b {
+  right: -8px;
+  top: 20px;
+}
+.why-section .node-c {
+  left: -8px;
+  bottom: 20px;
+}
+.why-section .node-d {
+  right: -8px;
+  bottom: 20px;
+}
+.why-section .why-visual-caption {
+  bottom: 72px;
+  color: #b4c7eb;
+  font-size: 9px;
+}
+.why-section .status-dot {
+  background: #8dafff;
+  box-shadow: 0 0 0 4px #8dafff15;
+}
+.approach-principles {
+  position: absolute;
+  inset: auto 24px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  border-top: 1px solid #a7bee526;
+  padding-top: 15px;
+  color: #d4dff3;
+  font-size: 11px;
+}
+.approach-principles svg {
+  color: #7893c4;
+}
+.why-section .why-copy > .eyebrow {
+  color: #4263c9;
+  font-size: 10px;
+  letter-spacing: 0.13em;
+}
+.why-section .why-copy h2 {
+  font-size: clamp(30px, 2.7vw, 40px);
+  line-height: 1.15;
+  letter-spacing: -0.045em;
+  margin: 12px 0 14px;
+}
+.why-section .why-copy h2 > span {
+  color: #4263db;
+}
+.why-section .why-copy > p {
+  font-size: 13px;
+  line-height: 1.7;
+  max-width: 540px;
+  color: #68768c;
+}
+.why-section .why-points {
+  gap: 8px;
+  margin: 18px 0 14px;
+}
+.why-section .why-points > div {
+  padding: 12px 15px;
+  border: 1px solid #e5eaf4;
+  border-radius: 12px;
+  gap: 12px;
+  background: #fff;
+  box-shadow: 0 4px 15px #1e365804;
+}
+.why-section .why-points > div > span {
+  width: 27px;
+  height: 27px;
+  border-radius: 10px;
+  background: #eff3ff;
+}
+.why-section .why-points h3 {
+  font-size: 14px;
+  margin: 1px 0 4px;
+}
+.why-section .why-points p {
+  max-width: none;
+  font-size: 12px;
+  color: #6c7890;
+  line-height: 1.7;
+}
+.why-section .why-copy > .text-link {
+  font-size: 12px;
+  padding: 7px 0 5px;
+  border-bottom: 1px solid #bccaf3;
+}
+@media (max-width: 1000px) {
+  .why-section .why-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 26px;
+  }
+  .why-section .why-visual {
+    height: 370px;
+  }
+  .why-section .why-visual-caption {
+    bottom: 67px;
+  }
+  .why-section .why-copy > p {
+    max-width: 700px;
+  }
+}
+@media (max-width: 540px) {
+  .why-section .why-visual {
+    height: 290px;
+    border-radius: 18px;
+  }
+  .approach-visual-heading {
+    inset: 18px 18px auto;
+    font-size: 8px;
+  }
+  .why-section .why-orbit {
+    width: 180px;
+    height: 180px;
+  }
+  .why-section .why-core {
+    width: 64px;
+    height: 64px;
+    border-radius: 17px;
+  }
+  .why-section .why-core svg {
+    width: 32px;
+  }
+  .why-section .orbit-node {
+    width: 62px;
+    height: 49px;
+    border-radius: 10px;
+    gap: 2px;
+  }
+  .why-section .orbit-node b {
+    font-size: 8px;
+  }
+  .why-section .why-visual-caption {
+    bottom: 55px;
+    font-size: 8px;
+  }
+  .approach-principles {
+    inset: auto 18px 15px;
+    gap: 15px;
+    padding-top: 10px;
+    font-size: 10px;
+  }
+  .why-section .why-points > div {
+    padding: 12px;
+    gap: 10px;
+  }
+  .why-section .why-copy > p {
+    font-size: 13px;
+  }
+}

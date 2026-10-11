@@ -29,6 +29,8 @@ The original public repository tracked `.env` and `.env.test` despite its ignore
 
 Fresh-checkout check: `npm ci --ignore-scripts`, then `npm run build:vercel`. Explicit generation handles skipped npm install scripts. Tests exercise the function handler, real database API, protected routes, SSR, 404s, sitemap and secure session cookies. Local build verification does not prove a successful cloud deployment.
 
+The lockfile includes Tailwind's bundled WASM dependencies (`@emnapi/core` and `@emnapi/runtime`). Missing bundled entries can pass a Windows install and still fail Linux `npm ci`. The repaired lockfile was checked with npm 11 and npm 12 dependency validation, plus a clean Linux x64 Node 24 install and full build. Existing dependency versions were preserved.
+
 After merging the repair and configuring cloud credentials, redeploy and check `/`, `/services`, `/admin`, `/api/health`, an enquiry and external mail/storage integrations.
 
 References: [Vite on Vercel](https://vercel.com/docs/frameworks/frontend/vite), [Node.js functions](https://vercel.com/docs/functions/runtimes/node-js), [limits](https://vercel.com/docs/functions/limitations).

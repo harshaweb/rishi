@@ -1409,6 +1409,11 @@ rentalRouter.post(
           receipt: b.reference,
           notes: { bookingId: b.id },
         })
+        if (!order.id || order.amount !== b.total || order.currency !== "INR")
+          throw fail(
+            502,
+            "The payment provider returned an invalid order. No payment was started."
+          )
         ;[p] = await rq(
           `INSERT INTO "RentalPayment" (id,"bookingId","orderId",amount) VALUES ($1,$2,$3,$4) ON CONFLICT ("bookingId") DO UPDATE SET "bookingId"=EXCLUDED."bookingId" RETURNING *`,
           [rid(), b.id, order.id, b.total],
@@ -1535,28 +1540,16 @@ rentalRouter.post(
   "/bookings/:id/payment-failed",
   signed,
   wrap(async (req, res) => {
-    await tx(async (db) => {
-      const [b] = await rq(
-        `SELECT * FROM "RentalBooking" WHERE id=$1 AND "guestId"=$2 FOR UPDATE`,
-        [req.params.id, req.rentalUser!.id],
-        db
-      )
-      if (b?.status === "PENDING") {
-        await rq(
-          `UPDATE "RentalBooking" SET status='PAYMENT_FAILED' WHERE id=$1`,
-          [b.id],
-          db
-        )
-        await rq(
-          `DELETE FROM "RentalBookingNight" WHERE "bookingId"=$1`,
-          [b.id],
-          db
-        )
-      }
-    })
+    const [booking] = await rq(
+      `SELECT id FROM "RentalBooking" WHERE id=$1 AND "guestId"=$2`,
+      [req.params.id, req.rentalUser!.id]
+    )
+    if (!booking) throw fail(404, "Reservation not found.")
+    // A failed browser attempt is not an authoritative order failure. The same
+    // checkout can retry, and a captured webhook may still be on its way.
     res.json({
       message:
-        "Payment was not confirmed. No paid reservation has been recorded.",
+        "The attempt failed. You can retry before your reservation hold expires.",
     })
   })
 )

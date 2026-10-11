@@ -540,12 +540,46 @@ describe("Rental reservations and provider verification", () => {
           { status: 200 }
         )
     )
+    vi.stubGlobal(
+      "fetch",
+      async () =>
+        new Response(
+          JSON.stringify({ id: order, amount: b.total + 1, currency: "INR" }),
+          { status: 200 }
+        )
+    )
+    expect((await post(guest, `/bookings/${b.id}/pay`)).status).toBe(502)
+    expect(
+      (await rq(`SELECT * FROM "RentalPayment" WHERE "bookingId"=$1`, [b.id]))
+        .length
+    ).toBe(0)
     vi.stubGlobal("fetch", orderFetch)
     const attempts = await Promise.all([
       post(guest, `/bookings/${b.id}/pay`),
       post(guest, `/bookings/${b.id}/pay`),
     ])
     expect(attempts.map((r) => r.status)).toEqual([200, 200])
+    expect(orderFetch).toHaveBeenCalledTimes(1)
+    expect((await post(other, `/bookings/${b.id}/payment-failed`)).status).toBe(
+      404
+    )
+    expect((await post(guest, `/bookings/${b.id}/payment-failed`)).status).toBe(
+      200
+    )
+    expect(
+      (await rq(`SELECT status FROM "RentalBooking" WHERE id=$1`, [b.id]))[0]
+        .status
+    ).toBe("PENDING")
+    expect(
+      (
+        await rq(`SELECT * FROM "RentalBookingNight" WHERE "bookingId"=$1`, [
+          b.id,
+        ])
+      ).length
+    ).toBe(2)
+    expect((await post(guest, `/bookings/${b.id}/pay`)).body.orderId).toBe(
+      order
+    )
     expect(orderFetch).toHaveBeenCalledTimes(1)
     await rq(
       `UPDATE "RentalProperty" SET "bookingMode"='HOST_APPROVAL',cancellation='STRICT' WHERE id=$1`,

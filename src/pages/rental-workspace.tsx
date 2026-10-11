@@ -1,3 +1,4 @@
+import { rentalCheckout } from "../lib/rental-checkout"
 import { useEffect, useState, type FormEvent, type ReactNode } from "react"
 import {
   Link,
@@ -22,6 +23,7 @@ import {
 } from "../../shared/rentals"
 import { RentalCard } from "./rentals"
 import { rentalCities } from "../../shared/rental-region"
+import { rentalContact } from "../../shared/rental-contact"
 import { ApiError } from "../lib/api"
 import {
   LayoutDashboard,
@@ -163,6 +165,12 @@ function Auth() {
     login = pathname === "/login",
     verify = pathname === "/verify-email",
     reset = pathname === "/reset-password"
+  const requestedNext = new URLSearchParams(search).get("next") || "/trips"
+  const next =
+    requestedNext.startsWith("/") && !requestedNext.startsWith("//")
+      ? requestedNext
+      : "/trips"
+  const nextQuery = `?next=${encodeURIComponent(next)}`
   const title = signup
     ? "Welcome to Omshivraj."
     : login
@@ -206,7 +214,7 @@ function Auth() {
                 <a href={dev}>Open verification / reset link</a>
               </p>
             )}
-            <Link className="r-primary" to="/login">
+            <Link className="r-primary" to={`/login${nextQuery}`}>
               Continue to log in
             </Link>
           </div>
@@ -237,7 +245,6 @@ function Auth() {
               })
               if (login) {
                 await refreshSession()
-                const next = new URLSearchParams(search).get("next") || "/trips"
                 navigate(
                   next.startsWith("/") && !next.startsWith("//")
                     ? next
@@ -280,7 +287,7 @@ function Auth() {
           </Form>
         )}
         <div className="r-auth-links">
-          <Link to={signup ? "/login" : "/signup"}>
+          <Link to={`${signup ? "/login" : "/signup"}${nextQuery}`}>
             {signup
               ? "Already have an account? Log in"
               : "New here? Create an account"}
@@ -466,90 +473,13 @@ function Wishlists() {
     </>
   )
 }
-type CheckoutOptions = {
-  key: string
-  amount: number
-  currency: string
-  order_id: string
-  name: string
-  handler: (d: {
-    razorpay_payment_id: string
-    razorpay_order_id: string
-    razorpay_signature: string
-  }) => void
-  modal: { ondismiss: () => void }
-}
-declare global {
-  interface Window {
-    Razorpay?: new (options: CheckoutOptions) => {
-      open: () => void
-      on: (event: string, callback: () => void) => void
-    }
-  }
-}
-async function checkout(
-  b: RentalBooking,
-  refresh: () => void,
-  notify: (s: string) => void
-) {
-  try {
-    const order = await rentalRequest<{
-      orderId: string
-      amount: number
-      currency: string
-      key: string
-    }>(`/bookings/${b.id}/pay`)
-    if (!window.Razorpay)
-      await new Promise<void>((resolve, reject) => {
-        const s = document.createElement("script")
-        s.src = "https://checkout.razorpay.com/v1/checkout.js"
-        s.onload = () => resolve()
-        s.onerror = () =>
-          reject(Error("Unable to load secure checkout. Please try again."))
-        document.head.appendChild(s)
-      })
-    const widget = new window.Razorpay!({
-      key: order.key,
-      amount: order.amount,
-      currency: order.currency,
-      order_id: order.orderId,
-      name: "Omshivraj",
-      handler: async (d) => {
-        try {
-          await rentalRequest(`/bookings/${b.id}/verify`, {
-            paymentId: d.razorpay_payment_id,
-            orderId: d.razorpay_order_id,
-            signature: d.razorpay_signature,
-          })
-          refresh()
-          notify("Payment verified. Check your reservation status.")
-        } catch (e) {
-          notify((e as Error).message)
-        }
-      },
-      modal: {
-        ondismiss: () =>
-          notify(
-            "Checkout closed. Your temporary hold remains until its expiry."
-          ),
-      },
-    })
-    widget.on("payment.failed", () => {
-      void rentalRequest(`/bookings/${b.id}/payment-failed`)
-        .then(refresh)
-        .catch((e) => notify(e.message))
-    })
-    widget.open()
-  } catch (e) {
-    notify((e as Error).message)
-  }
-}
 function Trips({ host = false }: { host?: boolean }) {
   const q = useRentalResource<RentalBooking[]>(
       host ? "/host/reservations" : "/bookings"
     ),
     { notify } = useRental()
   const [filter, setFilter] = useState("ALL"),
+    [paying, setPaying] = useState<string | null>(null),
     [cancel, setCancel] = useState<RentalBooking | null>(null),
     [review, setReview] = useState<RentalBooking | null>(null)
   async function act(path: string, body?: unknown) {
@@ -624,9 +554,20 @@ function Trips({ host = false }: { host?: boolean }) {
                     b.bookingMode === "PAYMENT" && (
                       <button
                         className="r-primary"
-                        onClick={() => checkout(b, q.refresh, notify)}
+                        disabled={paying !== null}
+                        aria-busy={paying === b.id}
+                        onClick={async () => {
+                          setPaying(b.id)
+                          try {
+                            await rentalCheckout(b, q.refresh, notify)
+                          } finally {
+                            setPaying(null)
+                          }
+                        }}
                       >
-                        Secure payment
+                        {paying === b.id
+                          ? "Opening secure checkout…"
+                          : `Pay ${money(b.total)} securely`}
                       </button>
                     )}
                   {["PENDING", "CONFIRMED"].includes(b.status) && (
@@ -2353,6 +2294,15 @@ function Info({ path }: { path: string }) {
           alt="A comfortable bedroom with a welcoming seating area"
         />
       </div>
+      {["/help", "/contact"].includes(path) && (
+        <div className="r-panel">
+          <h2>Call Omshivraj</h2>
+          <p>Speak with us about your stay or get help with a booking.</p>
+          <a className="r-primary" href={rentalContact.callUrl}>
+            Call {rentalContact.phone}
+          </a>
+        </div>
+      )}
       {["/help", "/contact"].includes(path) && (
         <nav className="r-help-links" aria-label="Support topics">
           <Link to="/trips">

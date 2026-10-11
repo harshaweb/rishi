@@ -1,3 +1,4 @@
+import { rentalCheckout } from "../lib/rental-checkout"
 import { RentalCalendar } from "../components/rental-calendar"
 import {
   useEffect,
@@ -67,6 +68,7 @@ import {
 } from "../../shared/rentals"
 import { RentalWorkspace } from "./rental-workspace"
 import { rentalCities } from "../../shared/rental-region"
+import { rentalContact } from "../../shared/rental-contact"
 
 const icons = [
   Building2,
@@ -489,6 +491,9 @@ function Header() {
     }
   }, [])
   const home = location.pathname === "/" || location.pathname === "/search"
+  const authNext = ["/login", "/signup"].includes(location.pathname)
+    ? new URLSearchParams(location.search).get("next") || "/trips"
+    : `${location.pathname}${location.search}`
   return (
     <header
       className={
@@ -524,7 +529,13 @@ function Header() {
             </span>
           </Link>
         </nav>
-        <div className="r-header-actions">
+        <div
+          className={
+            session?.user
+              ? "r-header-actions"
+              : "r-header-actions r-header-guest"
+          }
+        >
           <Link to="/host" className="r-host-link">
             Become a host
             <ArrowUpRight size={15} />
@@ -536,6 +547,19 @@ function Header() {
           >
             <Globe2 size={19} />
           </button>
+          {!session?.user && (
+            <nav className="r-header-auth" aria-label="Account access">
+              <Link to={`/login?next=${encodeURIComponent(authNext)}`}>
+                Log in
+              </Link>
+              <Link
+                className="r-header-signup"
+                to={`/signup?next=${encodeURIComponent(authNext)}`}
+              >
+                Sign up
+              </Link>
+            </nav>
+          )}
           <div ref={ref} className="r-menu-wrap">
             <button
               aria-label="Open account menu"
@@ -1505,6 +1529,9 @@ function StayPage() {
       notify(
         `Request ${booking.reference} saved. ${p.bookingMode === "HOST_APPROVAL" ? "Awaiting host approval." : "Complete payment to confirm."}`
       )
+      if (p.bookingMode === "PAYMENT") {
+        await rentalCheckout(booking, () => {}, notify)
+      }
       navigate("/trips")
     } catch (e) {
       setError((e as Error).message)
@@ -2249,6 +2276,7 @@ function Footer() {
             <h3>Support</h3>
             <Link to="/help">Help centre</Link>
             <Link to="/contact">Contact us</Link>
+            <a href={rentalContact.callUrl}>Call {rentalContact.phone}</a>
             <Link to="/cancellation-policy">Cancellation options</Link>
             <Link to="/messages">Message your host</Link>
           </div>

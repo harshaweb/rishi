@@ -8,6 +8,33 @@ test.beforeEach(async ({ page }) => {
   )
 })
 
+test("admin can reconnect after the session API is temporarily unavailable", async ({
+  page,
+}) => {
+  await page.route("**/api/auth/session", (route) =>
+    route.fulfill({
+      status: 502,
+      contentType: "application/json",
+      body: JSON.stringify({
+        error: "The workspace is temporarily unavailable.",
+      }),
+    })
+  )
+  await page.goto("/admin")
+  await expect(page.getByRole("alert")).toContainText(
+    "The workspace is temporarily unavailable."
+  )
+  await expect(
+    page.getByRole("button", { name: "Sign in securely" })
+  ).toBeDisabled()
+  await page.unroute("**/api/auth/session")
+  await page.getByRole("button", { name: "Retry connection" }).click()
+  await expect(
+    page.getByRole("button", { name: "Sign in securely" })
+  ).toBeEnabled()
+  await expect(page.getByRole("alert")).toHaveCount(0)
+})
+
 test("contact channels use saved settings and enquiry context follows navigation", async ({
   page,
   request,

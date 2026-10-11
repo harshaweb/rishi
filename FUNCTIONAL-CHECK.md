@@ -1,12 +1,12 @@
-# Functional verification — 10 October 2026
+# Functional verification — 11 October 2026
 
 Local website: http://localhost:5173/  
 Admin dashboard: http://localhost:5173/admin
 
 ## Results
 
-- 52 unit/integration tests passed against the isolated PostgreSQL test database.
-- Full Chromium suite: 17 tests passed. After fixing enquiry navigation, all three focused regression tests passed (18 distinct browser tests across these runs).
+- 55 unit/integration tests passed against the isolated PostgreSQL test database.
+- Full Chromium run: 17 passed and one admin bootstrap check failed during a temporary API 502. The section editor passed on rerun. After adding connection recovery, all seven admin/regression checks passed (19 distinct browser tests across these runs).
 - All 48 published public routes checked at 320px: no horizontal page overflow, broken page images or browser runtime errors.
 - Lint passed. Production build includes frontend and server TypeScript checks.
 
@@ -31,6 +31,7 @@ Admin dashboard: http://localhost:5173/admin
 - Navigating from Contact to Request a Quote, or between enquiry types and selected services, remounts the form with the correct context. Previously a reused form could retain the old enquiry type.
 - Enabled WhatsApp for **+91 70781 77772**, as confirmed by the owner, through the authenticated settings API. Persistence and rendered URL verified.
 - Added regression tests for narrow layouts, service filters/counts/navigation, configured contact targets and enquiry context changes.
+- Admin sign-in now offers Retry connection when its initial session request fails. A browser regression test simulates an API 502 and verifies recovery against the real session endpoint without reloading the page.
 
 ## External setup still required
 
@@ -39,4 +40,4 @@ Admin dashboard: http://localhost:5173/admin
 - WhatsApp opens the configured chat; successful message delivery requires the number to have a working WhatsApp account. Calls require the visitor's phone/calling app.
 - Local media storage works and is covered by integration tests. Production object storage and optional analytics are not configured or live-tested.
 
-External video loading is exercised with intercepted provider responses. Email transport tests use mocks and do not prove live delivery. No public deployment was performed. Test records and temporary content changes were cleaned up by the test suites; actual contact settings remain saved.
+External video loading is exercised with intercepted provider responses. Email transport tests use mocks and do not prove live delivery. The Vercel repair is in PR #1; its preview still reports failure and requires authenticated build logs to diagnose. Local verification does not establish cloud functionality. Test records and temporary content changes were cleaned up by the test suites; actual contact settings remain saved.

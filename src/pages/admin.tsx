@@ -517,6 +517,20 @@ export function Admin() {
               />
             </div>
             <Alert error={error} />
+            {!session && error && (
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={() => {
+                  setError("")
+                  void getAuthSession<Session>()
+                    .then(setSession)
+                    .catch((err) => setError(err.message))
+                }}
+              >
+                Retry connection
+              </button>
+            )}
             <button
               type="submit"
               className="button"

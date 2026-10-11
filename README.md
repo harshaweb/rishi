@@ -1,4 +1,4 @@
-# Havenly rental marketplace
+# Havenly rental marketplace 
 
 The active site is now the Havenly rental marketplace. See [RENTAL-SETUP.md](./RENTAL-SETUP.md) for current installation, accounts, routes, service configuration, booking rules and deployment. The previous business modules remain in the repository.
 

@@ -6,7 +6,7 @@
   "outputDirectory": "dist",
   "functions": {
     "api/index.js": {
-      "includeFiles": ["dist/index.html", "dist-server/**"],
+      "includeFiles": "{dist/index.html,dist-server/**}",
       "maxDuration": 60
     }
   },

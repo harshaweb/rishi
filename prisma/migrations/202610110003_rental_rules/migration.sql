@@ -1,0 +1,1 @@
+ALTER TABLE "RentalProperty" ADD COLUMN "checkInTime" TEXT NOT NULL DEFAULT '15:00', ADD COLUMN "checkOutTime" TEXT NOT NULL DEFAULT '11:00', ADD COLUMN "houseRules" TEXT NOT NULL DEFAULT 'No parties or smoking indoors.', ADD COLUMN "discountPercent" INTEGER NOT NULL DEFAULT 0 CHECK ("discountPercent" BETWEEN 0 AND 50);

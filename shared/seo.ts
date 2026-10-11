@@ -46,6 +46,56 @@ const names: Record<string, string> = {
   "/enquiry/marketing": "Digital marketing enquiry",
 }
 export function pageMetadata(pathname: string, content: Content) {
+  pathname = pathname.replace(/\/+$/, "") || "/"
+  const rentalNames: Record<string, string> = {
+    "/": "Find your kind of somewhere",
+    "/search": "Explore stays",
+    "/login": "Log in",
+    "/signup": "Create an account",
+    "/forgot-password": "Reset your password",
+    "/reset-password": "Choose a password",
+    "/verify-email": "Verify your email",
+    "/profile": "Your account",
+    "/wishlists": "Your wishlists",
+    "/trips": "Your trips",
+    "/messages": "Messages",
+    "/notifications": "Notifications",
+    "/host": "Share your space",
+    "/admin": "Marketplace administration",
+    "/help": "Help centre",
+    "/contact": "Contact support",
+    "/terms": "Terms",
+    "/privacy": "Privacy",
+    "/cancellation-policy": "Cancellation policy",
+    "/experiences": "Experiences · Coming later",
+  }
+  const stay = content.rentals?.find((p) => pathname === `/stays/${p.slug}`)
+  if (
+    rentalNames[pathname] ||
+    stay ||
+    pathname.startsWith("/host/") ||
+    pathname.startsWith("/admin/")
+  )
+    return {
+      title: `${stay ? stay.title + " in " + stay.city : rentalNames[pathname] || "Your workspace"} | Omshivraj`,
+      description: stay
+        ? stay.description.slice(0, 180)
+        : "Discover thoughtful stays in Delhi and Delhi NCR. Find a place to unwind, save your favourites, and plan your next chapter with Omshivraj.",
+      exists: true,
+      noindex:
+        Boolean(stay?.demo) ||
+        ![
+          "/",
+          "/search",
+          "/host",
+          "/help",
+          "/contact",
+          "/terms",
+          "/privacy",
+          "/cancellation-policy",
+          "/experiences",
+        ].includes(pathname),
+    }
   const parts = pathname.split("/").filter(Boolean)
   const collection =
     parts[0] === "services"
@@ -83,6 +133,16 @@ export function pageMetadata(pathname: string, content: Content) {
 }
 export function allPublicRoutes(content: Content) {
   return [
+    "/search",
+    "/host",
+    "/help",
+    "/terms",
+    "/privacy",
+    "/cancellation-policy",
+    "/experiences",
+    ...(content.rentals || [])
+      .filter((p) => !p.demo)
+      .map((p) => `/stays/${p.slug}`),
     ...publicRoutes,
     "/services",
     ...content.services.map((s) => `/services/${s.slug}`),

@@ -1,43 +1,53 @@
+# Historical business-site verification
+
+These results precede the rental marketplace redesign. Current Havenly verification and remaining configuration are documented in [RENTAL-VALIDATION.md](./RENTAL-VALIDATION.md) and [RENTAL-SETUP.md](./RENTAL-SETUP.md).
+
 # Functional verification — 11 October 2026
 
 Local website: http://localhost:5173/  
 Admin dashboard: http://localhost:5173/admin
 
-## Results
+## Verified results
 
-- 55 unit/integration tests passed against the isolated PostgreSQL test database.
-- Full Chromium run: 17 passed and one admin bootstrap check failed during a temporary API 502. The section editor passed on rerun. After adding connection recovery, all seven admin/regression checks passed (19 distinct browser tests across these runs).
-- All 48 published public routes checked at 320px: no horizontal page overflow, broken page images or browser runtime errors.
-- Lint passed. Production build includes frontend and server TypeScript checks.
+- 67 backend, validation, rendering, upload, security and integration tests passed across 9 test files.
+- All 19 Chromium browser tests passed. Four affected admin workflows passed again after the partial-update fix.
+- All 5 production-build checks passed against the compiled application using an isolated test database.
+- All 48 published public routes passed server rendering and SEO checks, and rendered at 320px without horizontal page overflow, broken images or browser runtime errors.
+- Production build, TypeScript checks and lint passed. Clean dependency installation was verified in the repair checkout during MongoDB setup.
+- A temporary local MongoDB replica set passed database initialization, seeded content/relations, admin login, persisted sessions, metrics, partial updates, enquiry submissions, newsletter subscriptions, applications, atomic rate limits, expiry and session revocation. This does not establish Atlas connectivity.
+- Local backend health returned HTTP 200 with database connected.
 
-| Feature | Verified behavior |
+## Functional coverage
+
+| Area | Verified behavior |
 | --- | --- |
-| Navigation | Desktop/mobile menus, repeated navigation, keyboard Escape, breadcrumbs, internal route inventory and custom 404 |
-| Services | All 15 records, every category filter, accurate counts, keyboard card navigation and detail links |
-| Content discovery | Resource search/categories, portfolio filters and FAQ accordions |
-| Project/contact forms | Required fields, real database persistence, enquiry reference and accurate email-configuration message |
-| Consultation | Date validation, saved request/reference and explicit unconfirmed meeting status |
-| Careers/newsletter | Saved applications/subscriptions; unsubscribe lifecycle covered by API tests |
-| Admin | Login/logout, content creation/edit/deletion, article preview/publishing, section changes/visibility/restoration and actual metrics |
-| Enquiry management | Status, notes, follow-up, deletion and CSV behavior |
-| Videos | Original video playback/progression, native controls, transcript and click-to-load external players |
-| Contact channels | Call link and WhatsApp target use the saved business number; no calls/messages were sent during verification |
-| Access control | Sessions, permissions, CSRF/origin checks, private files and upload validation covered by integration tests |
+| Navigation | Desktop/mobile menus, repeated navigation, keyboard access, internal links, custom 404 and consent preferences |
+| Public content | All services and industries, service category filters, portfolio filters, resource search/categories and FAQ accordions |
+| Enquiries | Required-field errors, database persistence, references, duplicate handling and accurate email configuration messages |
+| Consultation | Date validation and saved request/reference; does not falsely confirm a meeting |
+| Newsletter and careers | Saved subscriptions/applications, unsubscribe lifecycle and private resume access |
+| Admin | Login/logout, metrics, section visibility/content/restoration, article preview/publishing and content CRUD |
+| Content management | Create/search/update/publish/hide/delete industries, projects, categories, tags, FAQs, team members and jobs; service/article CRUD and audit trails |
+| Enquiry management | Search, filtering, pagination, status changes, follow-up, notes, deletion and CSV safety |
+| Security | Roles, CSRF/origin restrictions, invalid inputs, session cookies, disabled accounts and password-reset session revocation |
+| Files | Upload validation, private file permissions, PDF restrictions and local storage |
+| Videos/contact | Original video playback, transcript, controlled external embeds and correct call/WhatsApp links |
+| Production rendering | Hydration, lazy pages, canonical URLs, sitemap, robots, private indexing and static-folder route conflicts |
 
-## Fixes made
+## Issues found and fixed in this run
 
-- Homepage hero no longer forces a minimum width larger than a narrow phone viewport. Action links and assurance text can wrap.
-- Technology links use a compact vertical arrangement on narrow phones, removing the remaining horizontal overflow.
-- Navigating from Contact to Request a Quote, or between enquiry types and selected services, remounts the form with the correct context. Previously a reused form could retain the old enquiry type.
-- Enabled WhatsApp for **+91 70781 77772**, as confirmed by the owner, through the authenticated settings API. Persistence and rendered URL verified.
-- Added regression tests for narrow layouts, service filters/counts/navigation, configured contact targets and enquiry context changes.
-- Admin sign-in now offers Retry connection when its initial session request fails. A browser regression test simulates an API 502 and verifies recovery against the real session endpoint without reloading the page.
+1. Static asset directories redirected `/portfolio` and `/videos` to trailing-slash paths that returned 404. Static directory redirects are disabled, and metadata/canonical generation accepts trailing slashes.
+2. Partial admin updates applied defaults to omitted fields, unexpectedly unpublishing content and resetting other settings. PATCH now writes only supplied fields.
+3. The same partial-update behavior could re-enable disabled staff accounts during name edits. Account state is preserved; regression checks also verify password changes revoke existing sessions.
+4. Production browser checks now launch their own isolated compiled-server fixture and simulate HTTPS proxy headers when verifying secure cookies.
 
-## External setup still required
+## Live deployment and external setup
 
-- Business contact email has not been supplied. Transactional email also requires a verified email sender/provider and server-side credentials; adding a contact email alone does not enable delivery. Enquiries are saved in the admin dashboard regardless.
-- No live booking-calendar URL is configured. Consultation requests work; confirmed availability/meeting bookings require a calendar integration.
-- WhatsApp opens the configured chat; successful message delivery requires the number to have a working WhatsApp account. Calls require the visitor's phone/calling app.
-- Local media storage works and is covered by integration tests. Production object storage and optional analytics are not configured or live-tested.
+The deployed https://rishi-amber-one.vercel.app/api/health still returned HTTP 503 during this run. Local success must not be represented as a working production deployment. The supplied MongoDB URI contains username/password placeholders; no real MONGODB_URL is configured locally. A real named Atlas database URL must be configured before cloud initialization and deployment. The Vercel project session secret and site URL were configured earlier, but the current deployed function still reports missing configuration until a deployment with all required settings is made.
 
-External video loading is exercised with intercepted provider responses. Email transport tests use mocks and do not prove live delivery. The Vercel repair is in PR #1; its preview still reports failure and requires authenticated build logs to diagnose. Local verification does not establish cloud functionality. Test records and temporary content changes were cleaned up by the test suites; actual contact settings remain saved.
+- Business contact email and transactional email provider/sender credentials are absent. Enquiries are saved, but live email delivery is not enabled or verified. Email transport tests use mocks.
+- No booking-calendar URL is configured. Consultation requests work; confirmed calendar bookings are not enabled.
+- Production object storage is absent. Local uploads work; persistent Vercel uploads require configured object storage.
+- External video embed responses are intercepted in browser tests. No calls, WhatsApp messages or real emails were sent. Call/message delivery depends on the visitor's application and the configured number's account.
+
+Changes and verification are local; this report does not claim that these updates were pushed or deployed. Browser test submissions and temporary content are cleaned up by the suites; audit records remain as expected. No real business submissions were intentionally removed.

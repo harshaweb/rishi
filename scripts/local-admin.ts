@@ -1,9 +1,9 @@
-import "dotenv/config"
+import { isMongo } from "../server/database-url.js"
 import { randomBytes } from "node:crypto"
 import { mkdir, writeFile } from "node:fs/promises"
 import { PrismaClient } from "@prisma/client"
 import bcrypt from "bcryptjs"
-if (process.env.LOCAL_POSTGRES !== "1" || process.env.NODE_ENV === "production")
+if (isMongo || process.env.LOCAL_POSTGRES !== "1" || process.env.NODE_ENV === "production")
   throw new Error(
     "This helper is for the generated local development environment only. Use admin:create in production."
   )

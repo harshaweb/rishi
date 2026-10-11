@@ -1,4 +1,4 @@
-import "dotenv/config"
+import "../server/database-url.js"
 import { PrismaClient } from "@prisma/client"
 import { initialContent } from "../shared/content.js"
 const db = new PrismaClient()

@@ -1,6 +1,7 @@
+import { publicRentals } from "./rental-core.js"
 import { prisma } from "./db.js"
 import { settings as defaults } from "../shared/content.js"
-export async function getPublicContent() {
+export async function getPublicContent(rentalSlug?: string) {
   const [
     services,
     industries,
@@ -47,6 +48,7 @@ export async function getPublicContent() {
     prisma.siteSetting.findMany(),
   ])
   return {
+    rentals: await publicRentals(rentalSlug),
     services,
     industries,
     projects,

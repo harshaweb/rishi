@@ -13,12 +13,18 @@ import bcrypt from "bcryptjs"
 import { randomUUID } from "node:crypto"
 import { Prisma } from "@prisma/client"
 import { z } from "zod"
-import { prisma, pool } from "./db.js"
+import {
+  prisma,
+  pool,
+  mongoSessionStore,
+  invalidateUserSessions,
+} from "./db.js"
 import { rateStore } from "./rate-store.js"
 import { getPublicContent } from "./content.js"
 import { notifyLead } from "./mail.js"
 import { readStored, removeStored, saveFile } from "./storage.js"
 import { siteSettingsSchema } from "./settings.js"
+import { rentalRouter, rentalWebhook } from "./rental-api.js"
 import { readSections, sectionsSchema } from "../shared/sections.js"
 import {
   applicationSchema,
@@ -29,6 +35,7 @@ import {
   newsletterSchema,
   noteSchema,
   paginationSchema,
+  parsePatch,
   userSchema,
   type Entity,
 } from "./validation.js"
@@ -78,6 +85,7 @@ app.use(
         defaultSrc: ["'self'"],
         scriptSrc: [
           "'self'",
+          "https://checkout.razorpay.com",
           ...(process.env.GA4_MEASUREMENT_ID || process.env.GTM_CONTAINER_ID
             ? ["https://www.googletagmanager.com"]
             : []),
@@ -87,6 +95,8 @@ app.use(
         fontSrc: ["'self'"],
         connectSrc: [
           "'self'",
+          "https://*.razorpay.com",
+          "https://api.mapbox.com",
           ...(process.env.GA4_MEASUREMENT_ID || process.env.GTM_CONTAINER_ID
             ? [
                 "https://*.google-analytics.com",
@@ -98,6 +108,9 @@ app.use(
         objectSrc: ["'none'"],
         frameSrc: [
           "'self'",
+          "https://api.razorpay.com",
+          "https://checkout.razorpay.com",
+          "https://api.mapbox.com",
           "https://www.youtube-nocookie.com",
           "https://player.vimeo.com",
         ],
@@ -109,6 +122,7 @@ app.use(
     strictTransportSecurity: production ? undefined : false,
   })
 )
+app.post("/api/rental/payments/webhook", express.raw({ type: "application/json", limit: "256kb" }), rentalWebhook)
 app.use(express.json({ limit: "160kb" }))
 app.use((req, res, next) => {
   req.requestId = randomUUID()
@@ -118,7 +132,7 @@ app.use((req, res, next) => {
 const PgSession = connectPgSimple(session)
 app.use(
   session({
-    store: new PgSession({ pool, tableName: "Session" }),
+    store: mongoSessionStore || new PgSession({ pool, tableName: "Session" }),
     name: "harshaweb.sid",
     secret: process.env.SESSION_SECRET!,
     resave: false,
@@ -159,6 +173,7 @@ const publicLimit = rateLimit({
   store: rateStore("public:"),
   message: { error: "Too many submissions. Please try again in 15 minutes." },
 })
+app.use("/api/rental", rentalRouter)
 const loginLimit = rateLimit({
   windowMs: 15 * 60000,
   limit: 10,
@@ -203,7 +218,7 @@ app.get("/api/analytics-config", (_req, res) => {
 app.get(
   "/api/health",
   asyncHandler(async (_req, res) => {
-    await prisma.$queryRaw`SELECT 1`
+    await prisma.siteSetting.count()
     res.json({ status: "ok", database: "connected" })
   })
 )
@@ -704,7 +719,7 @@ app.patch(
   "/api/admin/settings",
   adminOnly,
   asyncHandler(async (req, res) => {
-    const data = siteSettingsSchema.partial().parse(req.body)
+    const data = parsePatch(siteSettingsSchema, req.body)
     if (
       data.contactEmail &&
       !z.string().email().safeParse(data.contactEmail).success
@@ -792,7 +807,7 @@ app.patch(
   "/api/admin/users/:id",
   adminOnly,
   asyncHandler(async (req, res) => {
-    const { password, ...data } = userSchema.partial().parse(req.body)
+    const { password, ...data } = parsePatch(userSchema, req.body)
     if (
       req.staff!.id === req.params.id &&
       (data.active === false || (data.role && data.role !== "ADMIN"))
@@ -821,10 +836,7 @@ app.patch(
       })
       return result
     })
-    if (password)
-      await pool.query("DELETE FROM \"Session\" WHERE sess->>'userId' = $1", [
-        req.params.id,
-      ])
+    if (password) await invalidateUserSessions(String(req.params.id))
     res.json(item)
   })
 )
@@ -1054,9 +1066,8 @@ app.delete(
   asyncHandler(async (req, res) => {
     const asset = await prisma.mediaAsset.findUniqueOrThrow({
       where: { id: String(req.params.id) },
-      include: { application: true },
     })
-    if (asset.application)
+    if (await prisma.jobApplication.count({ where: { resumeId: asset.id } }))
       throw fail(409, "Delete the associated application to remove its résumé.")
     const path = `/media/${asset.id}`
     const usage = await Promise.all([
@@ -1172,10 +1183,9 @@ app.get(
 )
 function entityData(entity: Entity, body: unknown, partial: boolean) {
   const schema = entitySchemas[entity]
-  const data = (partial ? schema.partial() : schema).parse(body) as Record<
-    string,
-    unknown
-  >
+  const data = (
+    partial ? parsePatch(schema, body) : schema.parse(body)
+  ) as Record<string, unknown>
   if (entity === "posts" && data.status === "PUBLISHED" && !data.publishedAt)
     data.publishedAt = new Date().toISOString()
   if (entity === "posts" && "tagIds" in data) {

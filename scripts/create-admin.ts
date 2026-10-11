@@ -1,4 +1,4 @@
-import "dotenv/config"
+import "../server/database-url.js"
 import { createInterface } from "node:readline/promises"
 import { stdin, stdout } from "node:process"
 import { PrismaClient } from "@prisma/client"

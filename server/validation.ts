@@ -1,5 +1,18 @@
 import { z } from "zod"
 
+export function parsePatch<T extends z.ZodObject>(
+  schema: T,
+  input: unknown
+): Partial<z.output<T>> {
+  const parsed = schema.partial().parse(input)
+  // Zod defaults may run inside optional fields. PATCH only writes supplied keys.
+  return Object.fromEntries(
+    Object.entries(parsed).filter(([key]) =>
+      Object.hasOwn(input as object, key)
+    )
+  ) as Partial<z.output<T>>
+}
+
 const text = (max = 300) =>
   z.string().trim().min(1, "This field is required.").max(max)
 const optionalText = (max = 300) => z.string().trim().max(max).default("")

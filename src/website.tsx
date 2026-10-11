@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react"
 import { Route, Routes, useLocation } from "react-router-dom"
+import { RentalApp, isRentalPath } from "./pages/rentals"
 import { Analytics } from "./lib/analytics"
 import { ContentProvider, useContent } from "./lib/content"
 import type { Content } from "../shared/content"
@@ -106,6 +107,7 @@ function Metadata() {
 function Site() {
   const { pathname } = useLocation()
   const { content } = useContent()
+  if (isRentalPath(pathname)) return <><Metadata /><RentalApp /></>
   if (pathname.startsWith("/admin"))
     return (
       <>

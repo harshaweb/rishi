@@ -13,7 +13,7 @@ export async function renderDocument(
   content: Content,
   base: string
 ) {
-  const pathname = path.split("?")[0]
+  const pathname = path.split("?")[0].replace(/\/+$/, "") || "/"
   const metadata = pageMetadata(pathname, content)
   let html = template.replace(
     /<title>.*?<\/title>/,
@@ -52,7 +52,7 @@ export async function renderDocument(
     {
       "@context": "https://schema.org",
       "@type": "Organization",
-      name: "Harshaweb",
+      name: metadata.title.endsWith("| Omshivraj") ? "Omshivraj" : "Harshaweb",
       url: base,
       ...(content.settings.contactEmail
         ? { email: content.settings.contactEmail }

@@ -1,6 +1,49 @@
 import { test, expect } from "@playwright/test"
 import { allPublicRoutes } from "../../shared/seo"
 import type { Content } from "../../shared/content"
+
+test("all public routes fit a narrow phone and load their images without runtime errors", async ({
+  page,
+  request,
+}) => {
+  test.setTimeout(120000)
+  const content = (await (await request.get("/api/content")).json()) as Content
+  const errors: string[] = []
+  page.on("pageerror", (error) => errors.push(error.message))
+  await page.setViewportSize({ width: 320, height: 800 })
+  await page.addInitScript(() =>
+    localStorage.setItem("harshaweb-consent", "essential")
+  )
+  for (const path of allPublicRoutes(content)) {
+    await page.goto(path)
+    await expect(page.locator("main h1").first(), path).toBeVisible()
+    await page.evaluate(async () => {
+      await document.fonts.ready
+      document
+        .querySelectorAll("img")
+        .forEach((image) => (image.loading = "eager"))
+    })
+    await expect
+      .poll(
+        () =>
+          page
+            .locator("img")
+            .evaluateAll((images) =>
+              images.every((image) => image.complete && image.naturalWidth > 0)
+            ),
+        { message: `Images on ${path}` }
+      )
+      .toBe(true)
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth
+      ),
+      path
+    ).toBe(true)
+    await expect(page.locator(".system-notice"), path).toHaveCount(0)
+  }
+  expect(errors).toEqual([])
+})
 test("production renders every public route on the server with unique SEO metadata", async ({
   request,
 }) => {
@@ -36,6 +79,18 @@ test("sitemap, robots, 404 responses and private indexing controls are correct",
   expect(admin.headers()["x-robots-tag"]).toBe("noindex, nofollow")
   expect((await request.get("/api/admin/leads")).status()).toBe(401)
 })
+
+test("page routes sharing asset folder names work with and without trailing slashes", async ({
+  request,
+}) => {
+  for (const path of ["/portfolio", "/videos", "/portfolio/", "/videos/"]) {
+    const response = await request.get(path, { maxRedirects: 0 })
+    expect(response.status(), path).toBe(200)
+    expect(await response.text(), path).toContain(
+      `href="https://www.harshaweb.com${path.replace(/\/$/, "")}"`
+    )
+  }
+})
 test("production hydration, lazy pages and security headers work in the browser", async ({
   page,
   request,
@@ -47,19 +102,16 @@ test("production hydration, lazy pages and security headers work in the browser"
   )
   await page.goto("/")
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "Technology"
+    "Your next chapter"
   )
-  await page
-    .getByRole("link", { name: "Explore our services", exact: true })
-    .click()
-  await expect(page).toHaveURL("/services")
-  await expect(page.locator(".service-card")).toHaveCount(15)
-  await page
-    .getByRole("link", { name: /Website Design & Development/ })
-    .first()
-    .click()
+  await page.getByRole("link", { name: "Find your getaway" }).click()
+  await expect(page).toHaveURL("/search")
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "A better first impression"
+    "A place for every kind of escape"
+  )
+  await page.goto("/help")
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(
+    "A little help"
   )
   expect(errors).toEqual([])
   const response = await request.get("/api/auth/session")

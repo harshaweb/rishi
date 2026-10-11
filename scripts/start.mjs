@@ -4,7 +4,7 @@ const server = app.listen(
   process.env.HOST || "127.0.0.1",
   () =>
     console.log(
-      `Harshaweb server listening on port ${process.env.PORT || 3001}`
+      `Omshivraj server listening on port ${process.env.PORT || 3001}`
     )
 )
 function stop() {

@@ -6,6 +6,8 @@ import { app, apiError } from "./app.js"
 import { getPublicContent } from "./content.js"
 import { allPublicRoutes } from "../shared/seo.js"
 import type { Content } from "../shared/content.js"
+import { rq } from "./rental-core.js"
+import { rentalRegionSql } from "./rental-region.js"
 const base = (process.env.SITE_URL || "http://localhost:5173").replace(
   /\/$/,
   ""
@@ -26,6 +28,16 @@ app.get("/robots.txt", (_req, res) => {
 app.get("/sitemap.xml", async (_req, res, next) => {
   try {
     const content = await getPublicContent()
+    const slugs = await rq(
+      `SELECT p.slug FROM "RentalProperty" p JOIN "RentalUser" u ON u.id=p."hostId" WHERE p.status='PUBLISHED' AND NOT p.demo AND u.active AND ${rentalRegionSql()}`
+    )
+    content.rentals.push(
+      ...slugs
+        .filter((p) => !content.rentals.some((r) => r.slug === p.slug))
+        .map(
+          (p) => ({ slug: p.slug, demo: false }) as Content["rentals"][number]
+        )
+    )
     res.type("application/xml").send(
       `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${allPublicRoutes(
         content as unknown as Content
@@ -42,10 +54,17 @@ if (process.env.NODE_ENV === "production") {
   const { renderDocument } = await import("./document.js")
   // On Vercel, dist assets are served by the CDN before the function fallback.
   if (!process.env.VERCEL)
-    app.use(express.static(resolve("dist"), { index: false, maxAge: "1h" }))
+    app.use(
+      express.static(resolve("dist"), {
+        index: false,
+        redirect: false,
+        maxAge: "1h",
+      })
+    )
   app.get("/{*path}", async (req, res, next) => {
     try {
-      const content = (await getPublicContent()) as unknown as Content
+      const rentalSlug = req.path.match(/^\/stays\/([^/]+)\/?$/)?.[1]
+      const content = (await getPublicContent(rentalSlug)) as unknown as Content
       const { html, metadata } = await renderDocument(
         template,
         req.originalUrl,

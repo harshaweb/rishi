@@ -1,3 +1,7 @@
+# Havenly rental marketplace
+
+The active site is now the Havenly rental marketplace. See [RENTAL-SETUP.md](./RENTAL-SETUP.md) for current installation, accounts, routes, service configuration, booking rules and deployment. The previous business modules remain in the repository.
+
 # Harshaweb
 
 A complete business website built on the existing **Vite, React, TypeScript, Tailwind and shadcn** project. Express provides authenticated APIs and production server rendering. PostgreSQL and Prisma persist public content, private submissions, sessions and administrative audit records.

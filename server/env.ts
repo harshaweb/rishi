@@ -1,4 +1,4 @@
-import "dotenv/config"
+import { validDatabaseUrl } from "./database-url.js"
 import { z } from "zod"
 const optional = z
   .string()
@@ -10,9 +10,8 @@ export const environment = z
       .string()
       .url()
       .refine(
-        (value) =>
-          value.startsWith("postgresql://") || value.startsWith("postgres://"),
-        "Use a PostgreSQL connection URL."
+        validDatabaseUrl,
+        "Use a PostgreSQL URL or a MongoDB URL with a database name and real credentials."
       ),
     SESSION_SECRET: z.string().min(32),
     SITE_URL: z.string().url().default("http://localhost:5173"),

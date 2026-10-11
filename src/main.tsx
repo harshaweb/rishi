@@ -25,3 +25,5 @@ const application = (
 )
 if (initial) hydrateRoot(document.getElementById("root")!, application)
 else createRoot(document.getElementById("root")!).render(application)
+import "./rental-design.css"
+import "./rental-polish.css"

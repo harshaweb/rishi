@@ -1,3 +1,4 @@
+import type { RentalProperty } from "./rentals"
 export const services = [
   [
     "website-development",
@@ -558,6 +559,7 @@ export const settings = {
   maintenanceNotice: "",
 }
 export const initialContent = {
+  rentals: [] as RentalProperty[],
   services,
   industries,
   projects,

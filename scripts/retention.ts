@@ -1,4 +1,5 @@
-import "dotenv/config"
+import "../server/database-url.js"
+import { mongo, pool } from "../server/db.js"
 import { PrismaClient } from "@prisma/client"
 import { removeStored } from "../server/storage.js"
 const db = new PrismaClient()
@@ -31,11 +32,15 @@ try {
         if (application.resume)
           await tx.mediaAsset.delete({ where: { id: application.resume.id } })
       }
-      await tx.$executeRaw`DELETE FROM "RateLimit" WHERE reset < NOW()`
       await tx.auditLog.create({
         data: { action: "RETENTION", entity: "personal-records" },
       })
     })
+    if (mongo)
+      await mongo
+        .collection("RateLimit")
+        .deleteMany({ reset: { $lt: new Date() } })
+    else await pool.query('DELETE FROM "RateLimit" WHERE reset < NOW()')
     for (const application of applications)
       if (application.resume) await removeStored(application.resume.key)
     console.log(

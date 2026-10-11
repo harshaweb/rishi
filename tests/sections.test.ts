@@ -23,7 +23,7 @@ describe("Website section controls", () => {
         .success
     ).toBe(true)
   })
-  it("renders overrides on the server, retains forms, and hides only chosen sections", async () => {
+  it("renders the rental homepage independently of retained business section overrides", async () => {
     const content = structuredClone(initialContent)
     content.settings.sectionContent = JSON.stringify({
       "home:Home:3": {
@@ -35,13 +35,12 @@ describe("Website section controls", () => {
       "hero:/contact": { title: "Contact our team" },
     })
     const home = await renderPage("/", content)
-    expect(home).toContain("Services tailored to you")
-    expect(home).toContain("An editable introduction.")
-    expect(home).not.toContain("why-section")
-    expect(home).toContain("Build your next idea")
+    expect(home).toContain("Your next chapter starts here.")
+    expect(home).toContain("rental-app")
+    expect(home).not.toContain("Services tailored to you")
     const contact = await renderPage("/contact", content)
-    expect(contact).toContain("Contact our team")
-    expect(contact).toContain("lead-name")
+    expect(contact).toContain("get you sorted.")
+    expect(contact).toContain("Checking your account")
   })
   it("renders safe replacement Markdown and restores the original when cleared", async () => {
     const content = structuredClone(initialContent)

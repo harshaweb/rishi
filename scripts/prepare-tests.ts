@@ -25,6 +25,7 @@ try {
 const env = {
   ...process.env,
   DATABASE_URL: url.toString(),
+  MONGODB_URL: "",
   SESSION_SECRET: randomBytes(48).toString("hex"),
   NODE_ENV: "test",
   TEST_ADMIN_PASSWORD: randomBytes(24).toString("base64url"),
@@ -34,6 +35,7 @@ await writeFile(
   ".env.test",
   Object.entries({
     DATABASE_URL: env.DATABASE_URL,
+    MONGODB_URL: "",
     SESSION_SECRET: env.SESSION_SECRET,
     NODE_ENV: env.NODE_ENV,
     TEST_ADMIN_PASSWORD: env.TEST_ADMIN_PASSWORD,

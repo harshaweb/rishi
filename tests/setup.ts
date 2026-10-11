@@ -1,5 +1,7 @@
 import { config } from "dotenv"
 config({ path: ".env.test", override: true, quiet: true })
+// The regression suite is isolated PostgreSQL even when Atlas is configured locally.
+process.env.MONGODB_URL = ""
 if (
   !process.env.DATABASE_URL?.includes("/harshaweb_test") ||
   process.env.NODE_ENV !== "test"

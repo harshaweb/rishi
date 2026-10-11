@@ -5,8 +5,15 @@ let application
 export function configurationProblems(env = process.env) {
   const problems = []
   try {
-    const database = new URL(env.DATABASE_URL || "")
-    if (!["postgres:", "postgresql:"].includes(database.protocol))
+    const connection = env.MONGODB_URL || env.DATABASE_URL || ""
+    const database = new URL(connection)
+    const mongo = ["mongodb:", "mongodb+srv:"].includes(database.protocol)
+    if (
+      /[<>]/.test(connection) ||
+      (mongo
+        ? database.pathname.length <= 1
+        : !["postgres:", "postgresql:"].includes(database.protocol))
+    )
       problems.push("DATABASE_URL")
   } catch {
     problems.push("DATABASE_URL")

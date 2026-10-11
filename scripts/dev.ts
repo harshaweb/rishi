@@ -1,5 +1,6 @@
 import { setupLocal } from "./setup-local.js"
 import { config } from "dotenv"
+import { isMongo } from "../server/database-url.js"
 import { spawn, type ChildProcess } from "node:child_process"
 import { resolve } from "node:path"
 await setupLocal()
@@ -58,15 +59,11 @@ process.on("SIGINT", () => void stop())
 process.on("SIGTERM", () => void stop())
 try {
   postgres =
-    process.env.LOCAL_POSTGRES === "1"
+    !isMongo && process.env.LOCAL_POSTGRES === "1"
       ? await (await import("./local-db.js")).startLocalDatabase()
       : null
-  await run([resolve("node_modules/prisma/build/index.js"), "generate"])
-  await run([
-    resolve("node_modules/prisma/build/index.js"),
-    "migrate",
-    "deploy",
-  ])
+  await run(["--import", "tsx", "scripts/database.ts", "generate"])
+  await run(["--import", "tsx", "scripts/database.ts", "deploy"])
   const { PrismaClient } = await import("@prisma/client")
   const database = new PrismaClient()
   const initialized = await database.siteSetting.count()

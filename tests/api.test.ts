@@ -341,6 +341,147 @@ describe("Public API and durable submissions", () => {
   })
 })
 describe("Authentication, permissions and administration", () => {
+  it.each([
+    {
+      entity: "industries",
+      collection: "industries",
+      field: "title",
+      data: {
+        slug: "audit-industry",
+        title: "Audit industry",
+        description: "Functional industry check",
+        benefits: ["Connected systems"],
+        body: "Industry content",
+        published: true,
+      },
+    },
+    {
+      entity: "projects",
+      collection: "projects",
+      field: "title",
+      data: {
+        slug: "audit-project",
+        title: "Audit project",
+        description: "Functional project check",
+        body: "Project content",
+        industry: "Technology",
+        services: ["Development"],
+        serviceIds: ["service-0"],
+        technologies: ["React"],
+        cover: "/portfolio/commerce.svg",
+        gallery: [],
+        published: true,
+      },
+    },
+    {
+      entity: "categories",
+      collection: "categories",
+      field: "title",
+      data: { slug: "audit-category", title: "Audit category" },
+    },
+    {
+      entity: "tags",
+      collection: "tags",
+      field: "title",
+      data: { slug: "audit-tag", title: "Audit tag" },
+    },
+    {
+      entity: "faqs",
+      collection: "faqs",
+      field: "question",
+      data: {
+        question: "Audit question?",
+        answer: "A saved answer.",
+        published: true,
+      },
+    },
+    {
+      entity: "team",
+      collection: "team",
+      field: "name",
+      data: {
+        name: "Audit team member",
+        role: "Engineer",
+        bio: "Test biography",
+        published: true,
+      },
+    },
+    {
+      entity: "jobs",
+      collection: "jobs",
+      field: "title",
+      data: {
+        slug: "audit-job",
+        title: "Audit job",
+        location: "Remote",
+        type: "Full time",
+        description: "Functional careers check",
+        body: "Job content",
+        published: true,
+      },
+    },
+  ])(
+    "creates, searches, updates, publishes and deletes $entity with audit records",
+    async ({ entity, collection, field, data }) => {
+      const { agent, csrf } = await login()
+      const created = await agent
+        .post(`/api/admin/${entity}`)
+        .set("Origin", origin)
+        .set("X-CSRF-Token", csrf)
+        .send(data)
+      expect(created.status, JSON.stringify(created.body)).toBe(201)
+      const id = created.body.id
+      try {
+        const listed = await agent.get(`/api/admin/${entity}?search=Audit`)
+        expect(listed.status).toBe(200)
+        expect(
+          listed.body.items.some((row: { id: string }) => row.id === id)
+        ).toBe(true)
+        const update = await agent
+          .patch(`/api/admin/${entity}/${id}`)
+          .set("Origin", origin)
+          .set("X-CSRF-Token", csrf)
+          .send({ [field]: "Audit updated content" })
+        expect(update.status, JSON.stringify(update.body)).toBe(200)
+        const published = (await request(app).get("/api/content")).body[
+          collection
+        ]
+        expect(
+          published.find((row: { id: string }) => row.id === id)?.[field]
+        ).toBe("Audit updated content")
+        if ("published" in data) {
+          const hidden = await agent
+            .patch(`/api/admin/${entity}/${id}`)
+            .set("Origin", origin)
+            .set("X-CSRF-Token", csrf)
+            .send({ published: false })
+          expect(hidden.status).toBe(200)
+          expect(
+            (await request(app).get("/api/content")).body[collection].some(
+              (row: { id: string }) => row.id === id
+            )
+          ).toBe(false)
+        }
+      } finally {
+        const deleted = await agent
+          .delete(`/api/admin/${entity}/${id}`)
+          .set("Origin", origin)
+          .set("X-CSRF-Token", csrf)
+        expect(deleted.status).toBe(200)
+      }
+      expect(
+        (await request(app).get("/api/content")).body[collection].some(
+          (row: { id: string }) => row.id === id
+        )
+      ).toBe(false)
+      const actions = (
+        await prisma.auditLog.findMany({ where: { recordId: id } })
+      ).map((row) => row.action)
+      expect(actions).toEqual(
+        expect.arrayContaining(["CREATE", "UPDATE", "DELETE"])
+      )
+    }
+  )
   it("blocks unauthenticated access to all private data", async () => {
     for (const path of [
       "leads",
@@ -560,6 +701,51 @@ describe("Authentication, permissions and administration", () => {
       where: { email: "staff@test.invalid" },
       data: { active: true },
     })
+  })
+  it("preserves disabled accounts on name edits and revokes sessions on password reset", async () => {
+    const { agent, csrf } = await login()
+    const target = await prisma.user.create({
+      data: {
+        email: "patch-user@test.invalid",
+        name: "Patch user",
+        role: "STAFF",
+        active: false,
+        passwordHash: await bcrypt.hash(password, 4),
+      },
+    })
+    try {
+      const renamed = await agent
+        .patch(`/api/admin/users/${target.id}`)
+        .set("Origin", origin)
+        .set("X-CSRF-Token", csrf)
+        .send({ name: "Renamed user" })
+      expect(renamed.status).toBe(200)
+      expect(renamed.body.active).toBe(false)
+      expect(renamed.body.role).toBe("STAFF")
+      await agent
+        .patch(`/api/admin/users/${target.id}`)
+        .set("Origin", origin)
+        .set("X-CSRF-Token", csrf)
+        .send({ active: true })
+      const staff = request.agent(app)
+      const session = await staff.get("/api/auth/session")
+      const signedIn = await staff
+        .post("/api/auth/login")
+        .set("Origin", origin)
+        .set("X-CSRF-Token", session.body.csrf)
+        .send({ email: target.email, password })
+      expect(signedIn.status).toBe(200)
+      expect((await staff.get("/api/admin/leads")).status).toBe(200)
+      const changed = await agent
+        .patch(`/api/admin/users/${target.id}`)
+        .set("Origin", origin)
+        .set("X-CSRF-Token", csrf)
+        .send({ password: password + "-changed" })
+      expect(changed.status).toBe(200)
+      expect((await staff.get("/api/admin/leads")).status).toBe(401)
+    } finally {
+      await prisma.user.delete({ where: { id: target.id } })
+    }
   })
   it("never returns password hashes or unsubscribe tokens in listings", async () => {
     const { agent } = await login()

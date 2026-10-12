@@ -92,9 +92,16 @@ export function RentalProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate(),
     location = useLocation()
   const refreshSession = useCallback(async () => {
-    const value = await rentalSession()
-    setSession(value)
     setSessionError("")
+    try {
+      const value = await rentalSession()
+      setSession(value)
+    } catch (error) {
+      setSessionError(
+        error instanceof Error ? error.message : "Cannot reach account services."
+      )
+      throw error
+    }
   }, [])
   useEffect(() => {
     rentalSession()

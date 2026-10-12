@@ -130,8 +130,32 @@ function Load({ error, loading }: { error: string; loading: boolean }) {
   ) : null
 }
 function Guard({ children, roles }: { children: ReactNode; roles?: string[] }) {
-  const { session } = useRental(),
+  const { session, sessionError, refreshSession } = useRental(),
     { pathname } = useLocation()
+  const [retrying, setRetrying] = useState(false)
+  if (!session && sessionError)
+    return (
+      <div className="r-empty">
+        <h2>Let’s reconnect your account.</h2>
+        <p>Account services are temporarily unavailable. Please try again.</p>
+        <button
+          className="r-primary"
+          disabled={retrying}
+          onClick={async () => {
+            setRetrying(true)
+            try {
+              await refreshSession()
+            } catch {
+              // The provider exposes the latest error and allows another retry.
+            } finally {
+              setRetrying(false)
+            }
+          }}
+        >
+          {retrying ? "Reconnecting…" : "Try again"}
+        </button>
+      </div>
+    )
   if (!session) return <p role="status">Checking your account…</p>
   if (!session.user)
     return (

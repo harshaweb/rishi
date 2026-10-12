@@ -12,6 +12,13 @@ export default defineConfig({
     host: "127.0.0.1",
     port: 5173,
     strictPort: true,
+    fs: {
+      allow: [
+        resolve(import.meta.dirname),
+        resolve(import.meta.dirname, "../node_modules"),
+        resolve(import.meta.dirname, "../server/shared"),
+      ],
+    },
     proxy: {
       "/api": "http://127.0.0.1:3001",
       "/media": "http://127.0.0.1:3001",

@@ -54,7 +54,9 @@ npm run test:e2e
 
 Keep Vercel Root Directory set to the repository root. `npm run build:vercel` produces `.vercel/output` using Vercel's Build Output API: static frontend assets plus the traced Node.js server function. Deep links and APIs route to that function; the server renders pages from the built frontend template.
 
-Configure production `MONGODB_URI`, `SESSION_SECRET`, `SITE_URL` and `NODE_ENV=production`. Run database initialization and create your admin against that database before launch. No demonstration listings or default accounts are automatically added to Atlas. Configure email delivery for verification/reset links, S3-compatible storage for persistent uploads, and all Razorpay keys plus the signed webhook endpoint `/api/rental/payments/webhook` for online payments. Payment keys alone do not verify settlement or refunds; test those with your provider before accepting real bookings.
+Configure production `MONGODB_URI`, `SESSION_SECRET`, `SITE_URL` and `NODE_ENV=production`. Run database initialization and create your admin against that database before launch. No demonstration listings or default accounts are automatically added to Atlas. Uploads persist in MongoDB GridFS by default; optional S3-compatible storage takes priority for new uploads when configured. Configure email delivery for verification/reset links and all Razorpay keys plus the signed webhook endpoint `/api/rental/payments/webhook` for online payments. Payment keys alone do not verify settlement or refunds; test those with your provider before accepting real bookings.
+
+The shadcn utility stylesheet is retained locally with its MIT license in `frontend/src/shadcn-utilities.css` and `frontend/src/shadcn-utilities.LICENSE`. The component-generation CLI is not required to build or run the application.
 
 Standalone hosting: `npm run build:vercel`, then `npm start` with the same production environment. Put HTTPS in front of the server and configure trusted proxy settings appropriately.
 

@@ -768,6 +768,10 @@ try {
     "Admin cannot disable self"
   )
   // Authentication token consumption and session invalidation.
+  // Start this independent scenario with a fresh rate window in the disposable DB.
+  await mongo!.collection("RateLimit").deleteMany({
+    _id: { $regex: "^mongo-rental-auth:" },
+  })
   const freshAgent = request.agent(app),
     freshCsrf = (await freshAgent.get("/api/rental/session")).body.csrf,
     fresh = { agent: freshAgent, csrf: freshCsrf }
@@ -779,6 +783,18 @@ try {
     role: "ADMIN",
   })
   equal(signup.status, 201, "Signup creates account")
+  equal(
+    (
+      await send(fresh, "post", "/signup", {
+        name: "Duplicate User",
+        email: " NEW@test.invalid ",
+        password: secret,
+        consent: true,
+      })
+    ).status,
+    409,
+    "Signup rejects duplicate emails regardless of case or spacing"
+  )
   equal(
     (await c("User").findOne({ email: "new@test.invalid" }))?.role,
     "GUEST",
@@ -795,6 +811,35 @@ try {
     400,
     "Verification token is single-use"
   )
+  equal(
+    (
+      await send(fresh, "post", "/login", {
+        email: "new@test.invalid",
+        password: "Incorrect-password-2026",
+      })
+    ).status,
+    401,
+    "Login rejects an incorrect password"
+  )
+  const freshLogin = await send(fresh, "post", "/login", {
+    email: " NEW@test.invalid ",
+    password: secret,
+  })
+  equal(freshLogin.status, 200, "New account can log in with normalized email")
+  fresh.csrf = freshLogin.body.csrf
+  equal(
+    (await fresh.agent.get("/api/rental/session")).body.user.email,
+    "new@test.invalid",
+    "Login persists in the session"
+  )
+  equal(
+    (await send(fresh, "post", "/logout")).status,
+    200,
+    "Account can log out"
+  )
+  const loggedOutSession = (await fresh.agent.get("/api/rental/session")).body
+  equal(loggedOutSession.user, null, "Logout clears authenticated session")
+  fresh.csrf = loggedOutSession.csrf
   const reset = await send(fresh, "post", "/forgot-password", {
     email: `${guestId}@test.invalid`,
   })
@@ -816,6 +861,26 @@ try {
     null,
     "Password reset invalidates existing sessions"
   )
+  equal(
+    (
+      await send(guest, "post", "/login", {
+        email: `${guestId}@test.invalid`,
+        password: secret,
+      })
+    ).status,
+    401,
+    "Password reset rejects the old password"
+  )
+  const resetLogin = await send(guest, "post", "/login", {
+    email: `${guestId}@test.invalid`,
+    password: secret + "New",
+  })
+  equal(
+    resetLogin.status,
+    200,
+    "Password reset allows login with the new password"
+  )
+  guest.csrf = resetLogin.body.csrf
   // Provider mock: no real charges are made.
   process.env.RAZORPAY_KEY_ID = "rzp_test_local"
   process.env.RAZORPAY_KEY_SECRET = "local-only-key"

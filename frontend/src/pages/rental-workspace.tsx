@@ -182,9 +182,10 @@ function Guard({ children, roles }: { children: ReactNode; roles?: string[] }) {
 function Auth() {
   const { pathname, search } = useLocation(),
     navigate = useNavigate(),
-    { refreshSession } = useRental()
+    { session, refreshSession } = useRental()
   const [message, setMessage] = useState(""),
-    [dev, setDev] = useState("")
+    [dev, setDev] = useState(""),
+    [showPassword, setShowPassword] = useState(false)
   const signup = pathname === "/signup",
     login = pathname === "/login",
     verify = pathname === "/verify-email",
@@ -256,7 +257,15 @@ function Auth() {
                       : "Send reset link"
             }
             submit={async (f) => {
+              if (
+                (signup || reset) &&
+                f.get("password") !== f.get("confirmPassword")
+              )
+                throw new Error(
+                  "Your passwords don’t match. Please enter the same password in both fields."
+                )
               const data = Object.fromEntries(f)
+              delete data.confirmPassword
               const result = await rentalRequest<{
                 message?: string
                 developmentLink?: string
@@ -281,7 +290,15 @@ function Auth() {
                     !result.developmentLink &&
                     result.emailStatus !== "PROVIDER_ACCEPTED"
                     ? "Your account was created, but we couldn’t send the verification email. Please contact support on +91 70781 77772 before requesting a stay."
-                    : result.message || "Request received. Check your email."
+                    : !signup &&
+                        !verify &&
+                        !reset &&
+                        !result.developmentLink &&
+                        (session?.emailConfigured === false ||
+                          result.emailStatus === "NOT_CONFIGURED" ||
+                          result.emailStatus === "FAILED")
+                      ? "If you have an account, contact support on +91 70781 77772 for help recovering access. Password reset email delivery is currently unavailable."
+                      : result.message || "Request received. Check your email."
                 )
                 setDev(result.developmentLink || "")
                 await refreshSession()
@@ -297,13 +314,36 @@ function Auth() {
                 Password
                 <input
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   minLength={login ? 1 : 12}
                   maxLength={72}
                   autoComplete={login ? "current-password" : "new-password"}
                   required
                 />
                 {!login && <small>Use at least 12 characters.</small>}
+              </label>
+            )}
+            {(signup || reset) && (
+              <label className="r-input-label">
+                Confirm password
+                <input
+                  name="confirmPassword"
+                  type={showPassword ? "text" : "password"}
+                  minLength={12}
+                  maxLength={72}
+                  autoComplete="new-password"
+                  required
+                />
+              </label>
+            )}
+            {(login || signup || reset) && (
+              <label className="r-check">
+                <input
+                  type="checkbox"
+                  checked={showPassword}
+                  onChange={(event) => setShowPassword(event.target.checked)}
+                />
+                Show password
               </label>
             )}
             {signup && (
@@ -321,7 +361,7 @@ function Auth() {
               ? "Already have an account? Log in"
               : "New here? Create an account"}
           </Link>
-          <Link to="/forgot-password">Forgot password?</Link>
+          <Link to={`/forgot-password${nextQuery}`}>Forgot password?</Link>
         </div>
       </div>
     </div>
@@ -2382,7 +2422,7 @@ function Info({ path }: { path: string }) {
   )
 }
 export function RentalWorkspace() {
-  const { pathname } = useLocation(),
+  const { pathname, search } = useLocation(),
     [params] = useSearchParams()
   void params
   if (
@@ -2394,7 +2434,7 @@ export function RentalWorkspace() {
       "/verify-email",
     ].includes(pathname)
   )
-    return <Auth key={pathname} />
+    return <Auth key={`${pathname}${search}`} />
   if (pathname === "/host") return <HostIntro />
   if (
     [

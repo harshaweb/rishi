@@ -1,5 +1,5 @@
 import "dotenv/config"
-import express from "express"
+import express, { type ErrorRequestHandler } from "express"
 import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
 import { app, apiError } from "./app.js"
@@ -84,6 +84,29 @@ if (process.env.NODE_ENV === "production") {
     }
   })
 }
+// Page failures must remain HTML; API clients keep their structured errors.
+const pageError: ErrorRequestHandler = (error, req, res, next) => {
+  if (req.path === "/api" || req.path.startsWith("/api/") || res.headersSent)
+    return next(error)
+  console.error("Page render failed", req.requestId, {
+    name: error instanceof Error ? error.name : "UnknownError",
+    code: typeof error?.code === "string" && /^[A-Z0-9_]{1,64}$/.test(error.code)
+      ? error.code : undefined,
+  })
+  res.status(503).set({
+    "Cache-Control": "no-store",
+    "Retry-After": "60",
+    "X-Robots-Tag": "noindex, nofollow",
+  }).type("html").send(`<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Omshivraj — Service temporarily unavailable</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#faf8f5;color:#242424;font:16px/1.6 system-ui,sans-serif}main{max-width:520px;padding:32px}h1{font-size:clamp(28px,6vw,40px);line-height:1.15}a{display:inline-block;background:#e74961;color:white;border-radius:12px;padding:12px 24px;text-decoration:none;font-weight:600}small{display:block;margin-top:24px;color:#666;overflow-wrap:anywhere}</style>
+</head><body><main><strong>Omshivraj</strong><h1>We’re having trouble connecting.</h1>
+<p>Our booking service is temporarily unavailable. Please try again shortly.</p>
+<a href="/">Try again</a><small>Reference: ${escape(req.requestId || "unavailable")}</small>
+</main></body></html>`)
+}
+app.use(pageError)
 app.use(apiError)
 export { app }
 export { disconnect } from "./db.js"

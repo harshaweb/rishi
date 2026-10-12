@@ -27,6 +27,9 @@ export const mongoSessionStore = mongoClient
       collectionName: "Session",
     })
   : null
+// The store derives a separate promise while creating its TTL index. Handle
+// startup rejection here; session operations still receive the original error.
+mongoSessionStore?.collectionP.catch(() => {})
 export async function invalidateUserSessions(userId: string) {
   if (mongo)
     await mongo.collection("Session").deleteMany({ "session.userId": userId })

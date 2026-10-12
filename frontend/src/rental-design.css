@@ -3690,3 +3690,75 @@
     width: 230px;
   }
 }
+/* Omshivraj administration workspace */
+.r-control-center.r-admin-shell { background: #f5f6f2; border-color: #e1e6df; border-radius: 24px; grid-template-columns: 236px minmax(0, 1fr); }
+.r-control-center .r-admin-sidebar { background: #fbfcf8; border-color: #e1e6df; }
+.r-control-center .r-admin-brand > span { background: #e4eee7; color: #214f41; }
+.r-control-center .r-admin-brand b { color: #214f41; }
+.r-control-center .r-admin-sidebar nav button { font-size: 12px; padding: 12px; }
+.r-control-center .r-admin-sidebar nav button.active { color: #fff; background: #214f41; box-shadow: 0 4px 12px #214f4114; }
+.r-control-center .r-admin-sidebar nav button.active svg { color: inherit; }
+.r-control-center .r-admin-sidebar nav button:not(.active):hover { background: #eaf0e9; color: #214f41; }
+.r-control-center .r-admin-identity > span { background: #e4eee7; color: #214f41; }
+.r-control-center .r-admin-content { padding: 30px; }
+.r-control-center .r-admin-heading p { font-size: 12px; }
+.r-control-center .r-hosting-primary { background: #214f41; color: #fff; border-color: #214f41; }
+.r-admin-command { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 28px; padding: 32px; background: #214f41; color: #fff; border-radius: 20px; margin-bottom: 24px; }
+.r-admin-command-kicker { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #d4dfc2; }
+.r-admin-command h2 { font-size: clamp(27px, 2.5vw, 38px); line-height: 1.15; letter-spacing: -1px; margin: 16px 0; }
+.r-admin-command h2 em { font-weight: 400; font-family: Georgia, serif; color: #e7dfbd; }
+.r-admin-command p { max-width: 460px; font-size: 13px; line-height: 1.8; color: #d7e4dc; margin-bottom: 24px; }
+.r-admin-command-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.r-admin-command-actions a { display: inline-flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 9px; font-size: 12px; font-weight: 600; color: #fff; border: 1px solid #ffffff40; }
+.r-admin-command-actions a:first-child { background: #f4efd9; color: #214f41; border-color: #f4efd9; }
+.r-admin-command-actions a:hover { opacity: .85; }
+.r-admin-command-summary { align-self: center; padding: 24px; background: #ffffff0d; border: 1px solid #ffffff26; border-radius: 15px; display: flex; flex-direction: column; align-items: flex-start; gap: 13px; }
+.r-admin-command-summary > svg { color: #e7dfbd; }
+.r-admin-command-summary strong { font-size: 55px; font-weight: 500; letter-spacing: -2px; line-height: 1; }
+.r-admin-command-summary > span { font-size: 12px; line-height: 1.6; color: #d7e4dc; }
+.r-admin-command-summary small { display: flex; align-items: center; gap: 7px; border-top: 1px solid #ffffff26; width: 100%; padding-top: 13px; font-size: 10px; }
+.r-control-center .r-admin-stat { border-color: #e1e6df; box-shadow: none; padding: 22px; }
+.r-control-center .r-admin-stat i { background: #edf2eb; color: #214f41; }
+.r-control-center .r-admin-stat h2 { color: #214f41; }
+.r-control-center .r-admin-stat p { min-height: 28px; line-height: 1.6; }
+.r-admin-stat-link { display: inline-flex; gap: 8px; align-items: center; margin-top: 14px; color: #214f41; font-size: 11px; font-weight: 600; }
+.r-control-center .r-admin-review-strip { background: #ebf0e8; border-color: #dce5d9; margin: 24px 0; }
+.r-control-center .r-admin-review-icon, .r-control-center .r-admin-review-strip > a b, .r-control-center .r-admin-review-strip > a svg { color: #214f41; }
+.r-admin-shortcuts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0 0 20px; }
+.r-admin-shortcuts a { display: flex; align-items: center; gap: 14px; padding: 18px; background: #fff; border: 1px solid #e1e6df; border-radius: 13px; color: #214f41; }
+.r-admin-shortcuts a:hover { background: #edf2eb; border-color: #b9cbbd; }
+.r-admin-shortcuts a > span { flex: 1; min-width: 0; }
+.r-admin-shortcuts b, .r-admin-shortcuts small { display: block; }
+.r-admin-shortcuts b { font-size: 13px; margin-bottom: 5px; }
+.r-admin-shortcuts small { color: #778379; font-size: 11px; line-height: 1.5; }
+.r-admin-service-status { display: flex; align-items: center; flex-wrap: wrap; gap: 18px 24px; padding: 20px; border: 1px solid #e1e6df; background: #fff; border-radius: 13px; margin-bottom: 26px; }
+.r-admin-service-status > div { display: flex; gap: 10px; align-items: center; margin-right: auto; color: #214f41; }
+.r-admin-service-status b, .r-admin-service-status small { display: block; }
+.r-admin-service-status b { font-size: 12px; margin-bottom: 4px; }
+.r-admin-service-status small { font-size: 10px; color: #778379; }
+.r-admin-service-status p { display: flex; align-items: center; gap: 7px; font-size: 11px; margin: 0; }
+.r-admin-service-status p > span { width: 7px; height: 7px; border-radius: 50%; background: #b78425; }
+.r-admin-service-status p > .ready { background: #367b54; }
+.r-control-center .r-admin-card, .r-control-center .r-admin-records { border-color: #e1e6df; }
+.r-control-center .r-admin-card-heading > a { color: #214f41; }
+.r-control-center .r-admin-heading, .r-control-center .r-hosting-header-actions { flex-wrap: wrap; }
+@media (max-width: 1100px) {
+  .r-control-center.r-admin-shell { grid-template-columns: 205px minmax(0, 1fr); }
+  .r-control-center .r-admin-content { padding: 24px; }
+  .r-admin-command { padding: 25px; grid-template-columns: minmax(0, 1fr) 170px; }
+  .r-admin-command-summary { padding: 18px; }
+}
+@media (max-width: 760px) {
+  .r-control-center.r-admin-shell { display: block; }
+  .r-control-center .r-admin-content { padding: 20px 16px; }
+  .r-control-center .r-admin-sidebar nav { display: flex; max-width: 100%; }
+  .r-control-center .r-admin-nav-label { display: none; }
+  .r-control-center .r-admin-sidebar nav button { white-space: nowrap; }
+  .r-admin-command { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 24px 20px; }
+  .r-admin-command-summary { display: none; }
+  .r-admin-command h2 { font-size: 29px; }
+  .r-control-center .r-admin-stat { padding: 17px; }
+  .r-admin-shortcuts { grid-template-columns: minmax(0, 1fr); }
+  .r-admin-service-status { align-items: flex-start; }
+  .r-admin-service-status > div { width: 100%; }
+}

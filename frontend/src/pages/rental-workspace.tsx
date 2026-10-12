@@ -1618,7 +1618,7 @@ function Admin() {
     URL.revokeObjectURL(url)
   }
   return (
-    <div className="r-admin-shell r-hosting-style">
+    <div className="r-admin-shell r-control-center">
       <aside className="r-admin-sidebar">
         <div className="r-admin-brand">
           <span>
@@ -1630,89 +1630,26 @@ function Admin() {
           </div>
         </div>
         <nav aria-label="Admin navigation">
-          {adminSections
-            .filter((section) =>
-              ["overview", "bookings", "listings", "users", "hosts"].includes(
-                section.key
-              )
-            )
-            .map(({ key: e, label, icon: Icon }) => (
-              <div key={e}>
-                <button
-                  className={entity === e ? "active" : ""}
-                  aria-current={entity === e ? "page" : undefined}
-                  onClick={() => {
-                    openSection(e)
-                  }}
-                >
-                  <Icon size={18} />
-                  <span>
-                    {e === "overview"
-                      ? "Today"
-                      : e === "listings"
-                        ? "Listings"
-                        : e === "users"
-                          ? "People"
-                          : label}
-                  </span>
-                  {e === "hosts" && Number(overview.data?.pendingHosts) > 0 && (
-                    <em>{overview.data?.pendingHosts}</em>
+          {adminSections.map(({ key, label, icon: Icon, group }) => (
+            <div key={key}>
+              {group && <p className="r-admin-nav-label">{group}</p>}
+              <button
+                className={entity === key ? "active" : ""}
+                aria-current={entity === key ? "page" : undefined}
+                onClick={() => openSection(key)}
+              >
+                <Icon size={18} />
+                <span>{label}</span>
+                {key === "hosts" && Number(overview.data?.pendingHosts) > 0 && (
+                  <em>{overview.data?.pendingHosts}</em>
+                )}
+                {key === "listings" &&
+                  Number(overview.data?.pendingListings) > 0 && (
+                    <em>{overview.data?.pendingListings}</em>
                   )}
-                  {e === "listings" &&
-                    Number(overview.data?.pendingListings) > 0 && (
-                      <em>{overview.data?.pendingListings}</em>
-                    )}
-                </button>
-              </div>
-            ))}
-          <details className="r-admin-more">
-            <summary
-              className={
-                ![
-                  "overview",
-                  "bookings",
-                  "listings",
-                  "users",
-                  "hosts",
-                ].includes(entity)
-                  ? "active"
-                  : ""
-              }
-            >
-              More <ChevronRight size={15} />
-            </summary>
-            <div>
-              {adminSections
-                .filter(
-                  (section) =>
-                    ![
-                      "overview",
-                      "bookings",
-                      "listings",
-                      "users",
-                      "hosts",
-                    ].includes(section.key)
-                )
-                .map(({ key, label, icon: Icon }) => (
-                  <button
-                    key={key}
-                    aria-current={entity === key ? "page" : undefined}
-                    onClick={(event) => {
-                      openSection(key)
-                      event.currentTarget
-                        .closest("details")
-                        ?.removeAttribute("open")
-                    }}
-                  >
-                    <Icon size={18} />
-                    {label}
-                  </button>
-                ))}
-              <Link to="/messages">
-                Messages <ArrowUpRight size={16} />
-              </Link>
+              </button>
             </div>
-          </details>
+          ))}
         </nav>
         <Link className="r-admin-site-link" to="/">
           View your website <ArrowUpRight size={16} />
@@ -1757,6 +1694,38 @@ function Admin() {
         {entity === "overview" ? (
           <>
             <Load {...overview} />
+            <section className="r-admin-command">
+              <div>
+                <span className="r-admin-command-kicker">
+                  OMSHIVRAJ · BUSINESS OVERVIEW
+                </span>
+                <h2>
+                  Your stays.
+                  <br />
+                  <em>Your business, in view.</em>
+                </h2>
+                <p>
+                  Manage your properties, look after your guests, and keep every
+                  reservation moving.
+                </p>
+                <div className="r-admin-command-actions">
+                  <Link to="/admin/listings">
+                    Manage properties <ArrowUpRight size={16} />
+                  </Link>
+                  <Link to="/admin/bookings">
+                    View reservations <ChevronRight size={16} />
+                  </Link>
+                </div>
+              </div>
+              <div className="r-admin-command-summary">
+                <House size={26} />
+                <strong>{overview.data?.listings ?? "—"}</strong>
+                <span>properties in your catalogue</span>
+                <small>
+                  <ShieldCheck size={14} /> Administrator access
+                </small>
+              </div>
+            </section>
             <div className="r-admin-stats">
               {[
                 {
@@ -1799,6 +1768,13 @@ function Admin() {
                       : "—"}
                   </h2>
                   <p>{note}</p>
+                  <Link
+                    className="r-admin-stat-link"
+                    to={`/admin/${key === "paid" ? "payments" : key}`}
+                  >
+                    View {key === "paid" ? "payments" : key}{" "}
+                    <ArrowUpRight size={14} />
+                  </Link>
                 </article>
               ))}
             </div>
@@ -1823,6 +1799,69 @@ function Admin() {
                 <ChevronRight size={17} />
               </Link>
             </div>
+            <section className="r-admin-shortcuts" aria-label="Quick actions">
+              {[
+                {
+                  to: "/admin/users",
+                  title: "Guests & accounts",
+                  copy: "Manage access and profiles",
+                  icon: Users,
+                },
+                {
+                  to: "/admin/payments",
+                  title: "Payments & revenue",
+                  copy: "Review payment records",
+                  icon: CreditCard,
+                },
+                {
+                  to: "/admin/coupons",
+                  title: "Offers & coupons",
+                  copy: "Manage your promotions",
+                  icon: TicketPercent,
+                },
+                {
+                  to: "/admin/settings",
+                  title: "Website settings",
+                  copy: "Update marketplace preferences",
+                  icon: Settings2,
+                },
+              ].map(({ to, title, copy, icon: Icon }) => (
+                <Link key={to} to={to}>
+                  <Icon size={21} />
+                  <span>
+                    <b>{title}</b>
+                    <small>{copy}</small>
+                  </span>
+                  <ChevronRight size={16} />
+                </Link>
+              ))}
+            </section>
+            <section
+              className="r-admin-service-status"
+              aria-label="Guest service readiness"
+            >
+              <div>
+                <ShieldCheck size={19} />
+                <span>
+                  <b>Guest services</b>
+                  <small>Live configuration for your marketplace</small>
+                </span>
+              </div>
+              <p>
+                <span
+                  className={session?.emailConfigured ? "ready" : "pending"}
+                />
+                Email{" "}
+                {session?.emailConfigured ? "configured" : "setup required"}
+              </p>
+              <p>
+                <span
+                  className={session?.paymentsConfigured ? "ready" : "pending"}
+                />
+                Online payments{" "}
+                {session?.paymentsConfigured ? "configured" : "setup required"}
+              </p>
+            </section>
             <div className="r-admin-overview-panels">
               <section className="r-admin-card">
                 <div className="r-admin-card-heading">

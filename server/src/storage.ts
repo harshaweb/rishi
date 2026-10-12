@@ -8,7 +8,10 @@ import { randomUUID } from "node:crypto"
 import { mkdir, writeFile, readFile, unlink } from "node:fs/promises"
 import path from "node:path"
 import { fileTypeFromBuffer } from "file-type"
-import { prisma } from "./db.js"
+import { GridFSBucket } from "mongodb"
+import { Readable } from "node:stream"
+import { pipeline } from "node:stream/promises"
+import { mongo, prisma } from "./db.js"
 
 const root = path.resolve(".data/uploads")
 const s3 = process.env.S3_BUCKET
@@ -18,6 +21,10 @@ const s3 = process.env.S3_BUCKET
       forcePathStyle: Boolean(process.env.S3_ENDPOINT),
     })
   : null
+const uploads = mongo
+  ? new GridFSBucket(mongo, { bucketName: "Uploads" })
+  : null
+const mongoPrefix = "mongo:"
 export async function saveFile(
   file: Express.Multer.File,
   isPublic: boolean,
@@ -46,11 +53,11 @@ export async function saveFile(
       new Error("Active content is not allowed in résumés."),
       { status: 400 }
     )
-  if (process.env.NODE_ENV === "production" && !s3)
+  if (process.env.NODE_ENV === "production" && !s3 && !uploads)
     throw Object.assign(new Error("Object storage is not configured."), {
       status: 503,
     })
-  const key = `${randomUUID()}.${type.ext}`
+  const key = `${!s3 && uploads ? mongoPrefix : ""}${randomUUID()}.${type.ext}`
   if (s3)
     await s3.send(
       new PutObjectCommand({
@@ -60,7 +67,17 @@ export async function saveFile(
         ContentType: type.mime,
       })
     )
-  else {
+  else if (uploads) {
+    const stream = uploads.openUploadStream(key, {
+      metadata: { contentType: type.mime },
+    })
+    try {
+      await pipeline(Readable.from([file.buffer]), stream)
+    } catch (error) {
+      await stream.abort().catch(() => {})
+      throw error
+    }
+  } else {
     await mkdir(root, { recursive: true })
     await writeFile(path.join(root, key), file.buffer)
   }
@@ -81,6 +98,15 @@ export async function saveFile(
   }
 }
 export async function readStored(key: string) {
+  // The key records the storage provider so enabling S3 later does not hide
+  // files already saved in MongoDB.
+  if (key.startsWith(mongoPrefix)) {
+    if (!uploads) throw new Error("MongoDB upload storage is unavailable.")
+    const chunks: Buffer[] = []
+    for await (const chunk of uploads.openDownloadStreamByName(key))
+      chunks.push(Buffer.from(chunk))
+    return Buffer.concat(chunks)
+  }
   if (s3) {
     const result = await s3.send(
       new GetObjectCommand({ Bucket: process.env.S3_BUCKET, Key: key })
@@ -90,6 +116,12 @@ export async function readStored(key: string) {
   return readFile(path.join(root, key))
 }
 export async function removeStored(key: string) {
+  if (key.startsWith(mongoPrefix)) {
+    if (!uploads) throw new Error("MongoDB upload storage is unavailable.")
+    const file = await uploads.find({ filename: key }).next()
+    if (file) await uploads.delete(file._id)
+    return
+  }
   if (s3)
     await s3.send(
       new DeleteObjectCommand({ Bucket: process.env.S3_BUCKET, Key: key })

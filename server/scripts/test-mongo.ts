@@ -23,6 +23,7 @@ try {
         SITE_URL: "http://localhost:5173",
         RESEND_API_KEY: "",
         EMAIL_FROM: "",
+        S3_BUCKET: "",
         LOCAL_POSTGRES: "0",
       },
     }

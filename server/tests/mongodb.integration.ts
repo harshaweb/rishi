@@ -539,6 +539,67 @@ try {
     .set("X-CSRF-Token", newHost.csrf)
     .attach("image", png, { filename: "test.png", contentType: "image/png" })
   equal(upload.status, 201, "Upload property photo and persist metadata")
+  const mediaId = upload.body.url.split("/").pop()
+  const asset = await mongo!.collection("MediaAsset").findOne({ _id: mediaId })
+  equal(
+    Boolean(asset?.key?.startsWith("mongo:")),
+    true,
+    "Uploads use durable MongoDB storage"
+  )
+  const downloaded = await request(app).get(upload.body.url)
+  equal(downloaded.status, 200, "Uploaded image is publicly readable")
+  equal(downloaded.body, png, "Downloaded image matches original bytes")
+  const { readStored, removeStored, saveFile } =
+    await import("../src/storage.js")
+  const previousMode = process.env.NODE_ENV
+  let productionAsset
+  try {
+    process.env.NODE_ENV = "production"
+    productionAsset = await saveFile(
+      {
+        buffer: png,
+        mimetype: "image/png",
+        originalname: "production.png",
+        size: png.length,
+      } as Express.Multer.File,
+      true
+    )
+  } finally {
+    process.env.NODE_ENV = previousMode
+  }
+  equal(
+    await readStored(productionAsset!.key),
+    png,
+    "Production upload works without S3"
+  )
+  // A separate client must see the file; it cannot depend on this process's disk.
+  const reader = new MongoClient(process.env.MONGODB_URI!)
+  try {
+    await reader.connect()
+    const { GridFSBucket } = await import("mongodb")
+    const bucket = new GridFSBucket(reader.db(), { bucketName: "Uploads" })
+    const chunks: Buffer[] = []
+    for await (const chunk of bucket.openDownloadStreamByName(
+      productionAsset!.key
+    ))
+      chunks.push(Buffer.from(chunk))
+    equal(
+      Buffer.concat(chunks),
+      png,
+      "Uploads survive independent database connections"
+    )
+  } finally {
+    await reader.close()
+  }
+  await removeStored(productionAsset!.key)
+  equal(
+    await mongo!
+      .collection("Uploads.files")
+      .countDocuments({ filename: productionAsset!.key }),
+    0,
+    "Deleting upload removes stored file"
+  )
+  await removeStored(productionAsset!.key)
   equal(
     (
       await newHost.agent.get(

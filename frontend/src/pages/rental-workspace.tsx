@@ -236,6 +236,7 @@ function Auth() {
               const result = await rentalRequest<{
                 message?: string
                 developmentLink?: string
+                emailStatus?: string
               }>(pathname, {
                 ...data,
                 ...(signup ? { consent: f.get("consent") === "on" } : {}),
@@ -252,7 +253,11 @@ function Auth() {
                 )
               } else {
                 setMessage(
-                  result.message || "Request received. Check your email."
+                  signup &&
+                    !result.developmentLink &&
+                    result.emailStatus !== "PROVIDER_ACCEPTED"
+                    ? "Your account was created, but we couldn’t send the verification email. Please contact support on +91 70781 77772 before requesting a stay."
+                    : result.message || "Request received. Check your email."
                 )
                 setDev(result.developmentLink || "")
                 await refreshSession()
@@ -320,7 +325,9 @@ function Profile() {
               notify(
                 d.developmentLink
                   ? `Development verification link: ${d.developmentLink}`
-                  : `Verification email: ${d.emailStatus}`
+                  : d.emailStatus === "PROVIDER_ACCEPTED"
+                    ? "Verification email sent. Please check your inbox."
+                    : "We couldn’t send the verification email. Please contact support on +91 70781 77772."
               )
             } catch (e) {
               notify((e as Error).message)

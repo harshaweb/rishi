@@ -50,7 +50,7 @@ check(
   "Transactional email is configured"
 )
 check(
-  Boolean(env.S3_BUCKET && env.S3_REGION),
+  Boolean((env.S3_BUCKET && env.S3_REGION) || databaseReady),
   "Persistent production upload storage is configured"
 )
 console.log(

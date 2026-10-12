@@ -48,6 +48,9 @@ export default async function handler(req, res) {
       console.error("Backend startup failed", {
         name: error instanceof Error ? error.name : "UnknownError",
         code: typeof error?.code === "string" ? error.code : undefined,
+        module: ["MODULE_NOT_FOUND", "ERR_MODULE_NOT_FOUND"].includes(error?.code)
+          ? error.message.match(/Cannot find (?:module|package) ['"]([^'"\r\n]+)['"]/)?.[1]
+          : undefined,
         fields: Array.isArray(error?.issues)
           ? error.issues.map((issue) => issue.path.join("."))
           : undefined,

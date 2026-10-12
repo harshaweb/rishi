@@ -1124,13 +1124,16 @@ function HomePage() {
             {rentalCities.map((city, index) => {
               const cityStays = all.filter((p) => p.city === city)
               const showNearby = city === "Greater Noida" && !cityStays.length
+              const showFaridabadNearby = city === "Faridabad" && !cityStays.length
+              const nearbyCity = showNearby ? "Noida" : "Gurugram"
+              const showNearbyStays = showNearby || showFaridabadNearby
               return (
                 <Section
                   key={city}
-                  title={showNearby ? "Stays near Greater Noida" : `Popular stays in ${city}`}
-                  subtitle={showNearby ? "Explore nearby flats in Noida. Each listing shows its actual location." : undefined}
-                  items={showNearby ? all.filter((p) => p.city === "Noida") : cityStays}
-                  query={`destination=${encodeURIComponent(showNearby ? "Noida" : city)}`}
+                  title={showNearbyStays ? `Stays near ${city}` : `Popular stays in ${city}`}
+                  subtitle={showNearbyStays ? `Explore nearby flats in ${nearbyCity}. Each listing shows its actual location.` : undefined}
+                  items={showNearbyStays ? all.filter((p) => p.city === nearbyCity) : cityStays}
+                  query={`destination=${encodeURIComponent(showNearbyStays ? nearbyCity : city)}`}
                   videoIndex={index}
                 />
               )

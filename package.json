@@ -107,5 +107,6 @@
   },
   "overrides": {
     "deepmerge-ts": "8.0.2"
-  }
+  },
+  "packageManager": "npm@11.6.2"
 }

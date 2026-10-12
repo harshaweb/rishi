@@ -1,18 +1,25 @@
 import { spawn } from "node:child_process"
 import { resolve } from "node:path"
 import { randomBytes } from "node:crypto"
+import { mkdtemp, cp, rm } from "node:fs/promises"
+import { tmpdir } from "node:os"
 import assert from "node:assert/strict"
 
+// Copy outside the repository so omitted dependencies cannot resolve from its
+// parent node_modules. Match Vercel's disabled require(ESM) runtime condition.
+const isolated = await mkdtemp(resolve(tmpdir(), "omshivraj-function-test-"))
+await cp(resolve(".vercel/output/functions/server.func"), isolated, { recursive: true })
 // Uses the running local replica set, never the private Atlas URL from .env.
 const child = spawn(
   process.execPath,
   [
+    "--no-experimental-require-module",
     "--input-type=module",
     "-e",
     'import http from "node:http"; import handler from "./server/api/index.js"; http.createServer(handler).listen(4174,"127.0.0.1");',
   ],
   {
-    cwd: resolve(".vercel/output/functions/server.func"),
+    cwd: isolated,
     windowsHide: true,
     stdio: ["ignore", "pipe", "pipe"],
     env: {
@@ -71,5 +78,9 @@ try {
   assert.equal(missing.status, 404)
   console.log("PASS packaged function returns real 404s")
 } finally {
+  const exited = new Promise((resolve) => child.once("exit", resolve))
   child.kill("SIGTERM")
+  await exited
+  assert.equal(resolve(isolated, ".."), resolve(tmpdir()))
+  await rm(isolated, { recursive: true, force: true })
 }

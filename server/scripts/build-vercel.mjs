@@ -1,5 +1,5 @@
 import { nodeFileTrace } from "@vercel/nft"
-import { cp, mkdir, readFile, writeFile, rm, stat } from "node:fs/promises"
+import { cp, mkdir, readFile, writeFile, rm, stat, readdir } from "node:fs/promises"
 import { resolve, dirname, relative, sep } from "node:path"
 const root = resolve(".")
 const output = resolve(".vercel/output")
@@ -11,8 +11,17 @@ if (
 await rm(output, { recursive: true, force: true })
 const fn = resolve(output, "functions/server.func")
 await mkdir(fn, { recursive: true })
+// Node's module-sync condition varies with runtime flags. Trace both router
+// module formats so CJS consumers work when require(ESM) is disabled on Vercel.
+const routerEntries = []
+for (const name of ["react-router", "react-router-dom"]) {
+  const dir = resolve("node_modules", name, "dist")
+  for (const file of await readdir(dir, { recursive: true }))
+    if (/\.(?:mjs|cjs|js)$/.test(file))
+      routerEntries.push(relative(root, resolve(dir, file)))
+}
 const { fileList } = await nodeFileTrace(
-  ["server/api/index.js", "dist-server/http.js"],
+  ["server/api/index.js", "dist-server/http.js", ...routerEntries],
   {
     base: root,
     processCwd: root,

@@ -1121,15 +1121,20 @@ function HomePage() {
           <Skeletons />
         ) : (
           <>
-            {rentalCities.map((city, index) => (
-              <Section
-                key={city}
-                title={`Popular stays in ${city}`}
-                items={all.filter((p) => p.city === city)}
-                query={`destination=${city}`}
-                videoIndex={index}
-              />
-            ))}
+            {rentalCities.map((city, index) => {
+              const cityStays = all.filter((p) => p.city === city)
+              const showNearby = city === "Greater Noida" && !cityStays.length
+              return (
+                <Section
+                  key={city}
+                  title={showNearby ? "Stays near Greater Noida" : `Popular stays in ${city}`}
+                  subtitle={showNearby ? "Explore nearby flats in Noida. Each listing shows its actual location." : undefined}
+                  items={showNearby ? all.filter((p) => p.city === "Noida") : cityStays}
+                  query={`destination=${encodeURIComponent(showNearby ? "Noida" : city)}`}
+                  videoIndex={index}
+                />
+              )
+            })}
             <div className="r-escape-banner">
               <img
                 src="/gallery/photo-08.jpg"

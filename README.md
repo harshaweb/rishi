@@ -58,6 +58,8 @@ Configure production `MONGODB_URI`, `SESSION_SECRET`, `SITE_URL` and `NODE_ENV=p
 
 The shadcn utility stylesheet is retained locally with its MIT license in `frontend/src/shadcn-utilities.css` and `frontend/src/shadcn-utilities.LICENSE`. The component-generation CLI is not required to build or run the application.
 
+The live app is deployed by Vercel project `rishi-server` from the repository root at `https://rishi-server-three.vercel.app`. Project `rishi-frontend` uses root directory `server/operations/frontend-redirect` to redirect its older URLs to that canonical app, preserving paths and query parameters. This keeps public account and booking flows on the same backend and database. Vercel installs dependencies with the tested npm 11.6.2 version pinned in `vercel.json`.
+
 Standalone hosting: `npm run build:vercel`, then `npm start` with the same production environment. Put HTTPS in front of the server and configure trusted proxy settings appropriately.
 
 ## Existing data

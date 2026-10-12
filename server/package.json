@@ -1,0 +1,11 @@
+{
+  "name": "omshivraj-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npm --prefix .. run dev:server",
+    "start": "npm --prefix .. start",
+    "db:check": "npm --prefix .. run db:check",
+    "test": "npm --prefix .. run test:mongo"
+  }
+}

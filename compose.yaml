@@ -1,18 +1,15 @@
 services:
-  postgres:
-    image: postgres:18
-    environment:
-      POSTGRES_DB: harshaweb
-      POSTGRES_USER: harshaweb
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a strong POSTGRES_PASSWORD in your local environment}
+  mongodb:
+    image: mongo:7.0
+    command: ["mongod", "--replSet", "omshivraj-local", "--bind_ip_all", "--port", "27018"]
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:27018:27018"
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - mongodb_data:/data/db
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U harshaweb -d harshaweb"]
+      test: ["CMD-SHELL", "mongosh --port 27018 --quiet --eval 'try { rs.status().ok } catch (e) { rs.initiate({_id: \"omshivraj-local\", members: [{_id: 0, host: \"127.0.0.1:27018\"}]}).ok }'"]
       interval: 5s
-      timeout: 5s
+      timeout: 10s
       retries: 10
 volumes:
-  postgres_data:
+  mongodb_data:

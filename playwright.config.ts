@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test"
 import "dotenv/config"
 export default defineConfig({
-  testDir: "./tests/e2e",
+  testDir: "./frontend/tests/e2e",
   outputDir: "./test-results/rentals",
   testMatch: ["rentals.spec.ts", "payment-checkout.spec.ts"],
   fullyParallel: false,

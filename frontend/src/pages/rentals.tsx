@@ -47,6 +47,9 @@ import {
   MessageCircle,
   Plus,
   Minus,
+  Clock3,
+  VolumeX,
+  Maximize2,
   X,
   Map as MapIcon,
 } from "lucide-react"
@@ -498,10 +501,14 @@ function Header() {
     <header
       className={
         home
-          ? "r-header r-header-refined"
-          : "r-header r-header-refined r-header-small"
+          ? "r-header r-header-refined r-header-new"
+          : "r-header r-header-refined r-header-new r-header-small"
       }
     >
+      <div className="r-header-ribbon">
+        <span><MapPin size={12} aria-hidden="true" /> Your next chapter, in Delhi & NCR.</span>
+        <a href={rentalContact.callUrl}>Let’s find your stay <span aria-hidden="true">·</span> {rentalContact.phone} <ArrowUpRight size={12} aria-hidden="true" /></a>
+      </div>
       <div className="r-topbar">
         <div className="r-header-brand">
           <Brand />
@@ -509,14 +516,16 @@ function Header() {
         </div>
         <nav className="r-main-tabs" aria-label="Main navigation">
           <Link
-            className={location.pathname != "/experiences" ? "active" : ""}
+            className={home ? "active" : ""}
+            aria-current={home ? "page" : undefined}
             to="/"
           >
             <span className="r-tab-art">
               <Home size={21} strokeWidth={1.8} />
             </span>
-            <span>Stays</span>
+            <span>Find a stay</span>
           </Link>
+          <Link to="/help" className={location.pathname === "/help" ? "active" : ""} aria-current={location.pathname === "/help" ? "page" : undefined}>Help & support</Link>
           <Link
             className={location.pathname === "/experiences" ? "active" : ""}
             to="/experiences"
@@ -770,16 +779,112 @@ function Skeletons() {
     </div>
   )
 }
+function RentalVideo({ className = "", label }: { className?: string; label: string }) {
+  const source = "/videos/stay-short-02"
+  const ref = useRef<HTMLVideoElement>(null)
+  const [reducedMotion, setReducedMotion] = useState(true)
+  useEffect(() => {
+    const video = ref.current
+    if (!video) return
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)")
+    let visible = false
+    const updatePreference = () => {
+      setReducedMotion(preference.matches)
+      if (preference.matches) video.pause()
+      else if (visible) void video.play().catch(() => {})
+    }
+    setReducedMotion(preference.matches)
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting && entry.intersectionRatio >= 0.35
+      if (visible) {
+        if (!video.getAttribute("src")) video.src = `${source}.mp4`
+        if (!preference.matches && document.visibilityState === "visible")
+          void video.play().catch(() => {})
+      } else video.pause()
+    }, { threshold: [0, 0.35] })
+    const tabVisibility = () => {
+      if (document.hidden) video.pause()
+      else if (visible && !preference.matches) void video.play().catch(() => {})
+    }
+    observer.observe(video)
+    preference.addEventListener("change", updatePreference)
+    document.addEventListener("visibilitychange", tabVisibility)
+    return () => {
+      observer.disconnect()
+      preference.removeEventListener("change", updatePreference)
+      document.removeEventListener("visibilitychange", tabVisibility)
+      video.pause()
+    }
+  }, [source])
+  return (
+    <video
+      ref={ref}
+      className={`r-property-video r-short-video ${className}`}
+      controls
+      autoPlay={!reducedMotion}
+      muted
+      loop
+      playsInline
+      preload="none"
+      poster={`${source}.jpg`}
+      aria-label={label}
+      onPlay={(event) => {
+        // A queued play event can arrive after another visible clip paused it.
+        if (event.currentTarget.paused) return
+        document.querySelectorAll<HTMLVideoElement>("video.r-property-video").forEach((video) => {
+          if (video !== event.currentTarget) video.pause()
+        })
+      }}
+    >
+      Your browser does not support video. <a href={`${source}.mp4`}>Open the video</a>.
+    </video>
+  )
+}
+function ExpandVideo() {
+  const { notify } = useRental()
+  return <button type="button" className="r-video-expand" aria-label="View video fullscreen" onClick={async event => {
+    const video = event.currentTarget.closest(".r-mini-video, .r-section-video")?.querySelector("video") as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null
+    if (!video) return
+    try {
+      if (video.requestFullscreen) await video.requestFullscreen()
+      else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen()
+      else notify("Use the video’s playback menu to enter fullscreen.")
+    } catch { notify("Use the video’s playback menu to enter fullscreen.") }
+  }}><Maximize2 size={14} aria-hidden="true" /><span>Expand video</span></button>
+}
+function SectionVideo({ title }: { index?: number; title: string }) {
+  return <section className="r-section-video" aria-label={`A closer look: ${title}`}>
+    <div className="r-section-video-copy">
+      <span className="r-kicker"><span className="r-motion-dot" aria-hidden="true" />LITTLE MOMENTS, IN MOTION</span>
+      <h3>A closer look,<br /><em>at your pace.</em></h3>
+      <p>A quick glimpse of somewhere new. Watch the shorts, then explore your next stay.</p>
+      <Link className="r-video-explore" to="/search">Find your next stay <ArrowUpRight size={18} aria-hidden="true" /></Link>
+      <ul className="r-video-features" aria-label="Video features">
+        <li><Clock3 size={14} aria-hidden="true" />12-second short</li>
+        <li><VolumeX size={14} aria-hidden="true" />Muted autoplay</li>
+        <li><Maximize2 size={14} aria-hidden="true" />Fullscreen available</li>
+      </ul>
+    </div>
+    <div className="r-section-video-stage">
+      <div className="r-video-film-label"><span aria-hidden="true" />THE SHORT COLLECTION</div>
+      <RentalVideo label={`Omshivraj property video: ${title}`} />
+      <div className="r-video-stage-actions"><span className="r-video-stage-caption">A new perspective.</span><ExpandVideo /></div>
+    </div>
+  </section>
+}
+
 function Section({
   title,
   subtitle,
   items,
   query,
+  videoIndex,
 }: {
   title: string
   subtitle?: string
   items: RentalProperty[]
   query?: string
+  videoIndex?: number
 }) {
   const ref = useRef<HTMLDivElement>(null)
   return (
@@ -818,6 +923,20 @@ function Section({
           <RentalCard key={p.id} property={p} />
         ))}
       </div>
+      {videoIndex !== undefined && <div className="r-mini-video" aria-label={`Video preview for ${title}`}>
+        <div className="r-mini-video-stage">
+          <span className="r-mini-film-label">OMSHIVRAJ · FILMS</span>
+          <RentalVideo label={`Omshivraj property short alongside ${title}`} />
+          <ExpandVideo />
+        </div>
+        <div className="r-mini-video-copy">
+          <span className="r-kicker">A MOMENT IN MOTION</span>
+          <h3>A little look.<br /><em>A little inspiration.</em></h3>
+          <p>Watch our property short, then find a stay that feels like you.</p>
+          <span className="r-mini-video-meta"><Clock3 size={13} aria-hidden="true" />12 sec<span aria-hidden="true">·</span><VolumeX size={13} aria-hidden="true" />Muted autoplay</span>
+          <Link to={`/search?${query || ""}`}>Explore these stays <ArrowUpRight size={16} aria-hidden="true" /></Link>
+        </div>
+      </div>}
     </section>
   )
 }
@@ -952,23 +1071,25 @@ function HomePage() {
     <>
       <div className="r-container r-home">
         <div className="r-home-intro">
-          <img
-            className="r-home-hero-image"
-            src="/gallery/photo-24.jpg"
-            alt="A welcoming room with a comfortable bed and sofa seating"
-            fetchPriority="high"
-          />
+          <img className="r-home-hero-image" src={uploadedPhotos[0].src} alt={uploadedPhotos[0].alt} fetchPriority="high" />
           <div className="r-home-hero-content">
-            <span className="r-kicker">YOUR DELHI NCR GETAWAY</span>
-            <h1>Your next chapter starts here.</h1>
+            <span className="r-kicker">DELHI & NCR · STAYS, REIMAGINED</span>
+            <h1>Stay somewhere<br />worth slowing<br /><em>down.</em></h1>
             <p>
               Beautiful stays in Delhi & Delhi NCR. A little more room to feel
               at home.
             </p>
             <Link to="/search">
-              Find your getaway <ArrowUpRight size={17} />
+              Explore the stays <ArrowUpRight size={17} />
             </Link>
+            <div className="r-hero-meta"><MapPin size={15} /><span>Delhi & Delhi NCR</span><i />Spaces to make your own</div>
           </div>
+          <div className="r-hero-photo-note"><span>MAKE YOURSELF AT HOME</span><b>A little room for possibility.</b><Link to="/search" aria-label="Explore places to stay"><ArrowUpRight size={22} /></Link></div>
+        </div>
+        <div className="r-discover-strip" aria-label="Ways to explore">
+          <Link to="/search?type=Apartment"><Building2 size={22} /><span><b>City stays, your way</b><small>Find your corner of Delhi NCR</small></span><ArrowUpRight size={18} /></Link>
+          <Link to="/search?type=Villa"><Home size={22} /><span><b>Room to reconnect</b><small>Villas for a change of pace</small></span><ArrowUpRight size={18} /></Link>
+          <Link to="/host"><Heart size={22} /><span><b>Make space for more</b><small>Share your home with new guests</small></span><ArrowUpRight size={18} /></Link>
         </div>
         <HomePhotoGallery />
         <div className="r-category-nav" aria-label="Stay categories">
@@ -1000,12 +1121,13 @@ function HomePage() {
           <Skeletons />
         ) : (
           <>
-            {rentalCities.map((city) => (
+            {rentalCities.map((city, index) => (
               <Section
                 key={city}
                 title={`Popular stays in ${city}`}
                 items={all.filter((p) => p.city === city)}
                 query={`destination=${city}`}
+                videoIndex={index}
               />
             ))}
             <div className="r-escape-banner">
@@ -1030,13 +1152,16 @@ function HomePage() {
                 </Link>
               </div>
             </div>
+            <SectionVideo index={1} title="A change of pace" />
             <Section
+              videoIndex={0}
               title="A beautiful stay. A little less spend."
               subtitle="Thoughtful places for everyday budgets."
               items={all.filter((p) => p.nightlyRate <= 350000)}
               query="maxPrice=3500"
             />
             <Section
+              videoIndex={1}
               title="A little extra room to unwind"
               subtitle="Villas, pools, and space for the whole group."
               items={all.filter((p) => p.type === "Villa")}
@@ -1067,6 +1192,7 @@ function HomePage() {
             </span>
           </div>
         </div>
+        <SectionVideo index={1} title="Make room for possibility" />
       </div>
     </>
   )

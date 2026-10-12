@@ -1,0 +1,17 @@
+/* Use the available viewport width without a boxed desktop container. */
+.rental-app.r-design-refresh { --r-page-gutter:24px; width:100%; min-height:100svh; }
+.r-design-refresh .r-container { width:100%; max-width:none; padding-inline:var(--r-page-gutter); }
+.r-design-refresh .r-header-new .r-topbar { width:calc(100% - var(--r-page-gutter) * 2); max-width:none; }
+.r-design-refresh .r-header-new .r-search-wrap { width:calc(100% - var(--r-page-gutter) * 2); max-width:none; }
+.r-design-refresh .r-header-ribbon { padding-inline:var(--r-page-gutter); }
+.r-design-refresh .r-home { padding-top:0; }
+.r-design-refresh .r-home-intro { width:calc(100% + var(--r-page-gutter) * 2); margin-inline:calc(-1 * var(--r-page-gutter)); border-radius:0; min-height:clamp(560px,calc(100svh - 250px),900px); padding-inline:clamp(32px,5vw,100px); box-shadow:none; }
+.r-design-refresh .r-home-hero-content { max-width:720px; }
+.r-design-refresh .r-auth.r-container { max-width:1100px; margin-inline:auto; }
+@media(max-width:600px) {
+ .rental-app.r-design-refresh { --r-page-gutter:16px; }
+ .r-design-refresh .r-home-intro { min-height:610px; padding:36px 24px 24px; }
+ .r-design-refresh .r-home-hero-content { width:100%; }
+ .r-design-refresh .r-card-row,
+ .r-design-refresh .r-category-nav { margin-right:calc(-1 * var(--r-page-gutter)); padding-right:var(--r-page-gutter); }
+}

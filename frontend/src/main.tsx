@@ -27,3 +27,9 @@ if (initial) hydrateRoot(document.getElementById("root")!, application)
 else createRoot(document.getElementById("root")!).render(application)
 import "./rental-design.css"
 import "./rental-polish.css"
+
+import "./rental-theme.css"
+import "./rental-premium.css"
+import "./rental-header.css"
+import "./rental-layout.css"
+import "./rental-videos.css"

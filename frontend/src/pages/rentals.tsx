@@ -842,6 +842,43 @@ function RentalVideo({ className = "", label, background = false, paused = false
     </video>
   )
 }
+function PropertyCarousel({ items, title }: { items: RentalProperty[]; title: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [edges, setEdges] = useState({ previous: false, next: false })
+  useEffect(() => {
+    const row = ref.current
+    if (!row) return
+    const update = () => {
+      const previous = row.scrollLeft > 2
+      const next = row.scrollLeft + row.clientWidth < row.scrollWidth - 2
+      setEdges(current => current.previous === previous && current.next === next ? current : { previous, next })
+    }
+    const observer = new ResizeObserver(update)
+    observer.observe(row)
+    row.addEventListener("scroll", update, { passive: true })
+    update()
+    return () => { observer.disconnect(); row.removeEventListener("scroll", update) }
+  }, [items.length])
+  function move(direction: number) {
+    const row = ref.current
+    if (!row) return
+    const gap = parseFloat(getComputedStyle(row).columnGap) || 0
+    row.scrollBy({ left: direction * (row.clientWidth + gap), behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })
+  }
+  return <div className="r-hotel-carousel-stage">
+    <div className="r-card-row r-hotel-carousel" ref={ref} tabIndex={0} role="region" aria-label={`${title} properties`} onKeyDown={event => {
+      if (event.target !== event.currentTarget || !["ArrowLeft", "ArrowRight"].includes(event.key)) return
+      event.preventDefault()
+      move(event.key === "ArrowRight" ? 1 : -1)
+    }}>
+      {items.map(property => <RentalCard key={property.id} property={property} />)}
+    </div>
+    <div className="r-row-arrows r-hotel-carousel-arrows">
+      <button type="button" aria-label={`Previous ${title}`} disabled={!edges.previous} onClick={() => move(-1)}><ChevronLeft size={22} /></button>
+      <button type="button" aria-label={`Next ${title}`} disabled={!edges.next} onClick={() => move(1)}><ChevronRight size={22} /></button>
+    </div>
+  </div>
+}
 function Section({
   title,
   subtitle,
@@ -853,43 +890,19 @@ function Section({
   items: RentalProperty[]
   query?: string
 }) {
-  const ref = useRef<HTMLDivElement>(null)
   return (
-    <section className="r-stay-section">
-      <div className="r-section-heading">
+    <section className="r-stay-section r-hotel-section">
+      <div className="r-section-heading r-hotel-section-heading">
         <div>
           <Link to={`/search?${query || ""}`}>
             <h2>
               {title}
-              <ChevronRight size={19} />
             </h2>
           </Link>
           {subtitle && <p>{subtitle}</p>}
         </div>
-        <div className="r-row-arrows">
-          <button
-            aria-label={`Previous ${title}`}
-            onClick={() =>
-              ref.current?.scrollBy({ left: -640, behavior: "smooth" })
-            }
-          >
-            <ChevronLeft size={15} />
-          </button>
-          <button
-            aria-label={`Next ${title}`}
-            onClick={() =>
-              ref.current?.scrollBy({ left: 640, behavior: "smooth" })
-            }
-          >
-            <ChevronRight size={15} />
-          </button>
-        </div>
       </div>
-      <div className="r-card-row" ref={ref}>
-        {items.slice(0, 12).map((p) => (
-          <RentalCard key={p.id} property={p} />
-        ))}
-      </div>
+      <PropertyCarousel items={items.slice(0, 12)} title={title} />
     </section>
   )
 }
@@ -1016,10 +1029,9 @@ function HomeFlatCatalogue({ items, loading }: { items: RentalProperty[]; loadin
   const cities = rentalCities.filter((name) => items.some((property) => property.city === name))
   const visible = city ? items.filter((property) => property.city === city) : items
   return (
-    <section id="all-flats" className="r-flat-catalogue" aria-labelledby="all-flats-heading">
-      <div className="r-section-heading">
+    <section id="all-flats" className="r-flat-catalogue r-hotel-section" aria-labelledby="all-flats-heading">
+      <div className="r-section-heading r-hotel-section-heading">
         <div>
-          <span className="r-kicker">FIND YOUR NEXT PLACE</span>
           <h2 id="all-flats-heading">All flats in Delhi & NCR</h2>
           <p>{loading ? "Loading your full collection…" : `${items.length} places to make yourself at home.`}</p>
         </div>
@@ -1033,9 +1045,7 @@ function HomeFlatCatalogue({ items, loading }: { items: RentalProperty[]; loadin
         ))}
       </div>
       <p className="r-flat-result-count" role="status">Showing {visible.length} {city ? `flats in ${city}` : "flats across Delhi & NCR"}</p>
-      <div className="r-card-grid">
-        {visible.map((property) => <RentalCard key={property.id} property={property} />)}
-      </div>
+      <PropertyCarousel key={city || "all"} items={visible} title={city ? `Flats in ${city}` : "All flats in Delhi & NCR"} />
     </section>
   )
 }

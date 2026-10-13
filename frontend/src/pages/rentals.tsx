@@ -756,19 +756,17 @@ export function RentalCard({ property: p }: { property: RentalProperty }) {
       </div>
       <Link to={`/stays/${p.slug}`} className="r-card-description">
         <div>
-          <h3>
-            {p.type} in {p.city}
-          </h3>
-          <span className="r-rating">
+          <h3>{p.title}</h3>
+          {p.reviewCount > 0 && <span className="r-rating">
             <Star size={10} fill="currentColor" />
-            {p.reviewCount ? Number(p.rating).toFixed(2) : "New"}
-          </span>
+            {Number(p.rating).toFixed(2)}
+          </span>}
         </div>
-        <p>{p.title}</p>
-        <small>
-          <b>{money(p.nightlyRate)}</b> / night{" "}
-          <span>· {p.capacity} guests</span>
-        </small>
+        <p className="r-card-stay-meta">{p.type} · {p.capacity} guests</p>
+        <div className="r-card-location-rate">
+          <span className="r-card-city">{p.city}</span>
+          <span className="r-card-rate"><b>{money(p.nightlyRate)}</b><small> / night</small></span>
+        </div>
       </Link>
     </article>
   )

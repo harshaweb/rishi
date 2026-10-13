@@ -1107,7 +1107,7 @@ function HomePage() {
     <>
       <div className="r-container r-home">
         <div className="r-home-intro">
-          <RentalVideo className="r-bloom-hero-video" label="Omshivraj property preview" source="/videos/homepage-tour" poster="/videos/homepage-tour.jpg" background paused={heroPaused} />
+          <RentalVideo className="r-bloom-hero-video" label="Omshivraj property preview" source="/videos/homepage-tour-enhanced" poster="/videos/homepage-tour-enhanced.jpg" background paused={heroPaused} />
           <div className="r-home-hero-content">
             <h1>Your next stay.<br />Hello, Omshivraj.</h1>
             <p>Explore flats and homes across Delhi & NCR. Choose your dates, find the right space, and request your stay.</p>

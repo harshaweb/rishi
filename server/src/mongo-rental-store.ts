@@ -51,6 +51,8 @@ async function initialize() {
     ["Payment", { bookingId: 1 }],
     ["Review", { bookingId: 1 }],
     ["Token", { hash: 1 }],
+    ["IdentityVerification", { userId: 1, provider: 1 }],
+    ["IdentityAttempt", { stateHash: 1 }],
     ["Refund", { bookingId: 1 }],
     ["Conversation", { propertyId: 1, guestId: 1 }],
     ["WishlistItem", { wishlistId: 1, propertyId: 1 }],
@@ -60,6 +62,7 @@ async function initialize() {
   ]
   for (const [name, keys] of unique)
     await collection(name).createIndex(keys, { unique: true })
+  await collection("IdentityAttempt").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
   for (const key of ["orderId", "paymentId"])
     await collection("Payment").createIndex(
       { [key]: 1 },

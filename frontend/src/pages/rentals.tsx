@@ -1651,6 +1651,31 @@ function SearchPage() {
   )
 }
 
+function identityBookingDraft(slug: string) {
+  const empty = { checkIn: "", checkOut: "", guests: 1, coupon: "" }
+  if (
+    typeof window === "undefined" ||
+    !new URLSearchParams(window.location.search).has("digilocker")
+  )
+    return empty
+  try {
+    const value = JSON.parse(
+      sessionStorage.getItem(`omshivraj-digilocker:${slug}`) || "null"
+    )
+    if (!value || value.expiresAt < Date.now()) return empty
+    return {
+      checkIn: typeof value.checkIn === "string" ? value.checkIn : "",
+      checkOut: typeof value.checkOut === "string" ? value.checkOut : "",
+      guests:
+        Number.isInteger(value.guests) && value.guests > 0 && value.guests <= 30
+          ? value.guests
+          : 1,
+      coupon: typeof value.coupon === "string" ? value.coupon : "",
+    }
+  } catch {
+    return empty
+  }
+}
 function StayPage() {
   const slug = useLocation().pathname.split("/")[2],
     navigate = useNavigate(),
@@ -1670,11 +1695,28 @@ function StayPage() {
     }
   >(`/properties/${slug}`)
   const p = query.data || content.rentals?.find((x) => x.slug === slug)
+  const [draft] = useState(() => identityBookingDraft(slug))
+  const [identityConsent, setIdentityConsent] = useState(false)
+  const identityNeeded = Boolean(
+    session?.digilockerRequired && !session.user?.digilockerVerified
+  )
+  const identityResult = new URLSearchParams(useLocation().search).get(
+    "digilocker"
+  )
+  const identityNotice = (
+    {
+      failed: "DigiLocker verification failed. Please try again.",
+      expired: "Your verification session expired. Please start again.",
+      cancelled: "Verification was cancelled. You can try again when ready.",
+      "not-linked": "Please link your Aadhaar in DigiLocker, then try again.",
+      unavailable: "DigiLocker setup is not complete. Please contact support.",
+    } as Record<string, string>
+  )[identityResult || ""]
   const [gallery, setGallery] = useState<number | null>(null),
-    [checkIn, setCheckIn] = useState(""),
-    [checkOut, setCheckOut] = useState(""),
-    [guests, setGuests] = useState(1),
-    [coupon, setCoupon] = useState(""),
+    [checkIn, setCheckIn] = useState(draft.checkIn),
+    [checkOut, setCheckOut] = useState(draft.checkOut),
+    [guests, setGuests] = useState(draft.guests),
+    [coupon, setCoupon] = useState(draft.coupon),
     [quote, setQuote] = useState<Record<string, number> | null>(null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
@@ -1683,6 +1725,34 @@ function StayPage() {
     [report, setReport] = useState(false),
     [reportBody, setReportBody] = useState("")
   const bookingKey = useRef("")
+  async function verifyIdentity() {
+    setBusy(true)
+    setError("")
+    try {
+      const response = await rentalRequest<{ url: string }>(
+        "/digilocker/start",
+        { consent: identityConsent, returnTo: `/stays/${slug}` }
+      )
+      try {
+        sessionStorage.setItem(
+          `omshivraj-digilocker:${slug}`,
+          JSON.stringify({
+            checkIn,
+            checkOut,
+            guests,
+            coupon,
+            expiresAt: Date.now() + 15 * 60000,
+          })
+        )
+      } catch {
+        /* Verification remains available if browser storage is disabled. */
+      }
+      window.location.assign(response.url)
+    } catch (e) {
+      setError((e as Error).message)
+      setBusy(false)
+    }
+  }
   function clearQuote() {
     setQuote(null)
     setError("")
@@ -1712,6 +1782,10 @@ function StayPage() {
     }
     if (!quote) {
       await price()
+      return
+    }
+    if (identityNeeded) {
+      setError("Complete DigiLocker verification before requesting this stay.")
       return
     }
     setBusy(true)
@@ -2082,6 +2156,80 @@ function StayPage() {
                 }}
               />
             </details>
+            {(session?.digilockerRequired || session?.digilockerConfigured) && (
+              <section
+                className="r-digilocker-panel"
+                aria-label="DigiLocker verification"
+              >
+                <div>
+                  <ShieldCheck size={20} />
+                  <b>
+                    {session?.user?.digilockerVerified
+                      ? "DigiLocker account verified"
+                      : "Verify with DigiLocker"}
+                  </b>
+                </div>
+                {session?.user?.digilockerVerified ? (
+                  <p>
+                    Your account verification is complete. Choose your dates to
+                    request a stay.
+                  </p>
+                ) : (
+                  <>
+                    <p>
+                      {session?.digilockerRequired
+                        ? "Account verification is required before requesting a stay."
+                        : "Verify your account securely with DigiLocker."}
+                    </p>
+                    {!session?.user ? (
+                      <Link
+                        to={`/login?next=${encodeURIComponent(`/stays/${slug}`)}`}
+                      >
+                        Log in to verify your account
+                      </Link>
+                    ) : !session.digilockerConfigured ? (
+                      <p role="status">
+                        DigiLocker setup is in progress. Please contact support
+                        before booking.
+                      </p>
+                    ) : (
+                      <>
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={identityConsent}
+                            onChange={(e) =>
+                              setIdentityConsent(e.target.checked)
+                            }
+                          />{" "}
+                          <span>
+                            I agree to share my DigiLocker account details for
+                            this verification.
+                          </span>
+                        </label>
+                        <p className="r-digilocker-disclosure">
+                          DigiLocker returns your name, date of birth, gender
+                          and Aadhaar-linkage status. We keep only verification
+                          status, time and an account reference digest. No
+                          documents are downloaded.{" "}
+                          <Link to="/privacy">Privacy policy</Link>
+                        </p>
+                        <button
+                          type="button"
+                          className="r-secondary r-full"
+                          disabled={busy || !identityConsent}
+                          onClick={verifyIdentity}
+                        >
+                          {busy ? "Connecting…" : "Continue to DigiLocker"}
+                          <ArrowUpRight size={16} />
+                        </button>
+                      </>
+                    )}
+                  </>
+                )}
+                {identityNotice && <p role="alert">{identityNotice}</p>}
+              </section>
+            )}
             {error && (
               <p role="alert" className="r-error">
                 {error}
@@ -2089,7 +2237,7 @@ function StayPage() {
             )}
             <button
               className="r-primary r-full"
-              disabled={busy || !checkIn || !checkOut}
+              disabled={busy || !checkIn || !checkOut || Boolean(quote && identityNeeded && session?.user)}
               onClick={quote ? reserve : price}
             >
               {busy

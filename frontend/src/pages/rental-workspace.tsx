@@ -2381,7 +2381,7 @@ function Info({ path }: { path: string }) {
     ],
     "/privacy": [
       "Your plans are personal.",
-      "We store your account details, bookings, messages and preferences to operate the marketplace. Passwords are hashed, sessions are protected, and payment card details are handled by the payment provider. Contact support for account data requests.",
+      "We store your account details, bookings, messages and preferences to operate the marketplace. Passwords are hashed, sessions are protected, and payment card details are handled by the payment provider. When DigiLocker verification is enabled, you authorize DigiLocker to share account details (name, date of birth, gender and Aadhaar-linkage status) through its consent screen. We use these transiently to confirm control of an Aadhaar-linked DigiLocker account. We retain only the verification time, consent time and a keyed account-reference digest; we do not retain those profile details, Aadhaar numbers, identity documents, or access tokens. Verification is an account check, not document authentication. Contact support for account data requests.",
     ],
     "/cancellation-policy": [
       "Plans change. Here’s what happens.",

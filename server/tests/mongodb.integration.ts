@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import request from "supertest"
 import bcrypt from "bcryptjs"
-import { randomUUID, createHmac } from "node:crypto"
+import { randomUUID, createHmac, createHash } from "node:crypto"
 import { MongoClient, type Document } from "mongodb"
 
 if (
@@ -1124,6 +1124,63 @@ try {
     401,
     "Logged out session denied"
   )
+  // DigiLocker tests never call the real identity provider or use guest documents.
+  await mongo!.collection("RateLimit").deleteMany({ _id: { $regex: "^mongo-rental-auth:" } })
+  process.env.DIGILOCKER_REQUIRED = "1"
+  equal((await send(guest, "post", "/bookings", { ...booking(90), digilockerVerified: true })).status, 403, "Booking cannot bypass required DigiLocker verification")
+  const identityInput = { consent: true, returnTo: "/stays/test-stay" }
+  equal((await send(guest, "post", "/digilocker/start", identityInput)).status, 503, "Missing provider credentials fails closed")
+  process.env.DIGILOCKER_CLIENT_ID = "test-requester"
+  process.env.DIGILOCKER_CLIENT_SECRET = "test-secret"
+  equal((await send(guest, "post", "/digilocker/start", { ...identityInput, consent: false })).status, 400, "Explicit identity consent required")
+  equal((await send(guest, "post", "/digilocker/start", { ...identityInput, returnTo: "https://attacker.invalid" })).status, 400, "External identity return URL rejected")
+  equal((await request(app).post("/api/rental/digilocker/start").set("Origin", origin).send(identityInput)).status, 403, "DigiLocker start requires CSRF")
+  let challenge = "", linked = false
+  let providerRequests = 0
+  const beforeIdentityFetch = globalThis.fetch
+  globalThis.fetch = async (input, init) => {
+    const url = String(input)
+    if (url === "https://api.digitallocker.gov.in/public/oauth2/1/token") {
+      providerRequests++
+      const body = new URLSearchParams(String(init?.body))
+      equal(createHash("sha256").update(body.get("code_verifier") || "").digest("base64url"), challenge, "Token exchange uses original PKCE verifier")
+      equal(body.get("redirect_uri"), `${origin}/api/rental/digilocker/callback`, "Token exchange uses registered callback")
+      return Response.json({ access_token: "test-access", refresh_token: "test-refresh", token_type: "Bearer", digilockerid: guestId })
+    }
+    if (url === "https://api.digitallocker.gov.in/public/oauth2/1/user") return Response.json({ digilockerid: guestId, eaadhaar: linked ? "Y" : "N", name: "Private test name", dob: "01012000", gender: "M" })
+    if (url === "https://api.digitallocker.gov.in/public/oauth2/1/revoke") return Response.json({})
+    return beforeIdentityFetch(input, init)
+  }
+  async function identityStart() {
+    const response = await send(guest, "post", "/digilocker/start", identityInput)
+    equal(response.status, 200, "Authenticated DigiLocker start")
+    const url = new URL(response.body.url)
+    challenge = url.searchParams.get("code_challenge") || ""
+    equal(url.searchParams.get("code_challenge_method"), "S256", "DigiLocker uses S256 PKCE")
+    equal(url.origin, "https://api.digitallocker.gov.in", "Only official provider authorization URL")
+    return url.searchParams.get("state")!
+  }
+  let identityState = await identityStart()
+  equal((await request(app).get(`/api/rental/digilocker/callback?state=${identityState}&code=test`)).headers.location, `${origin}/search?digilocker=expired`, "Callback requires original browser cookie")
+  equal(providerRequests, 0, "Invalid browser binding never calls provider")
+  await c("IdentityAttempt").updateMany({}, { $set: { expiresAt: new Date(0) } })
+  equal((await guest.agent.get(`/api/rental/digilocker/callback?state=${identityState}&code=test`)).headers.location, `${origin}/search?digilocker=expired`, "Expired OAuth state rejected")
+  identityState = await identityStart()
+  equal((await guest.agent.get(`/api/rental/digilocker/callback?state=${identityState}&error=access_denied`)).headers.location, `${origin}/stays/test-stay?digilocker=cancelled`, "Denied consent returns safely without verification")
+  identityState = await identityStart()
+  equal((await guest.agent.get(`/api/rental/digilocker/callback?state=${identityState}&code=test`)).headers.location, `${origin}/stays/test-stay?digilocker=not-linked`, "Unlinked DigiLocker account is not marked verified")
+  equal(await c("IdentityVerification").countDocuments({ userId: guestId }), 0, "Failed account check creates no verification record")
+  linked = true
+  identityState = await identityStart()
+  equal((await guest.agent.get(`/api/rental/digilocker/callback?state=${identityState}&code=test`)).headers.location, `${origin}/stays/test-stay?digilocker=verified`, "Provider-verified callback returns to selected flat")
+  const verification = await c("IdentityVerification").findOne({ userId: guestId })
+  equal(Boolean(verification?.verifiedAt), true, "Verification is persisted in MongoDB")
+  equal(Object.keys(verification || {}).some(key => ["name", "dob", "gender", "access_token", "refresh_token", "digilockerid"].includes(key)), false, "Identity profile and tokens are not retained")
+  equal((await guest.agent.get("/api/rental/session")).body.user.digilockerVerified, true, "Session exposes verified account status")
+  equal((await guest.agent.get(`/api/rental/digilocker/callback?state=${identityState}&code=test`)).headers.location, `${origin}/search?digilocker=expired`, "OAuth callback replay rejected")
+  equal((await send(guest, "post", "/bookings", booking(90))).status, 201, "Verified guest can request a stay")
+  globalThis.fetch = beforeIdentityFetch
+  process.env.DIGILOCKER_REQUIRED = "0"
   const secondClient = new MongoClient(process.env.MONGODB_URI!)
   await secondClient.connect()
   equal(

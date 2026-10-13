@@ -46,6 +46,7 @@ import type { ClientSession, Document } from "mongodb"
 
 // Session/request declarations are shared with the legacy router during migration.
 import type {} from "./rental-api.js"
+import { digiLockerRouter, digilockerRequired, digilockerConfigured, hasDigiLocker } from "./digilocker.js"
 const wrap =
   (fn: (req: Request, res: Response) => Promise<unknown>) =>
   (req: Request, res: Response, next: NextFunction) => {
@@ -77,6 +78,7 @@ async function current(req: Request) {
     email: u.email,
     role: u.role,
     verified: u.verified,
+    digilockerVerified: await hasDigiLocker(String(u.id)),
     sessionVersion: u.sessionVersion,
     phone: p?.phone || "",
     photo: p?.photo || "",
@@ -153,6 +155,7 @@ async function issueToken(userId: string, address: string, kind: string) {
     ...(process.env.NODE_ENV !== "production" ? { developmentLink: link } : {}),
   }
 }
+r.use("/digilocker", digiLockerRouter(signed, sensitive))
 r.get(
   "/session",
   wrap(async (req, res) => {
@@ -160,6 +163,8 @@ r.get(
     res.json({
       user: await current(req),
       csrf: req.session.csrf,
+      digilockerRequired: digilockerRequired(),
+      digilockerConfigured: digilockerConfigured(),
       paymentsConfigured: Boolean(
         process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
       ),
@@ -494,6 +499,8 @@ r.post(
       .parse(req.body)
     if (!req.rentalUser!.verified)
       throw fail(403, "Verify your email before requesting a stay.")
+    if (digilockerRequired() && !(await hasDigiLocker(uid(req))))
+      throw fail(403, "Verify your DigiLocker account before requesting a stay.")
     const result = await tx(async (session) => {
       await lockProperty(d.propertyId, session)
       const p = await publicProperty(d.propertyId, session)

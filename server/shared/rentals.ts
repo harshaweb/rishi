@@ -57,6 +57,7 @@ export type RentalProperty = {
   createdAt?: string
 }
 export type RentalUser = {
+  digilockerVerified?: boolean
   id: string
   name: string
   email: string

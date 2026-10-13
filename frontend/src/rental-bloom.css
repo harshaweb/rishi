@@ -320,6 +320,14 @@ body:has(.rental-app) { min-width:0; }
 }
 @media(prefers-reduced-motion:reduce) { .r-hero-film-toggle { display:none; } }
 .r-bloom-home .r-mobile-nav { display:none; }
+.r-design-refresh .r-digilocker-panel { background:#fffbea; border:1px solid #ecdfa8; border-radius:12px; padding:18px; margin:18px 0; }
+.r-digilocker-panel > div { display:flex; gap:10px; align-items:center; color:#493b06; }
+.r-digilocker-panel p { font-size:13px; line-height:1.65; color:#5d5540; margin:12px 0; }
+.r-digilocker-panel label { display:flex; align-items:flex-start; gap:10px; font-size:13px; line-height:1.6; margin:16px 0; }
+.r-digilocker-panel input[type=checkbox] { width:18px; height:18px; flex-shrink:0; margin:2px 0 0; accent-color:#8b6800; }
+.r-digilocker-panel .r-digilocker-disclosure { font-size:11px; }
+.r-digilocker-panel a { text-decoration:underline; }
+.r-digilocker-panel .r-full { justify-content:center; gap:10px; }
 @media(max-width:360px) {
  .r-bloom-home .r-header-new .r-brand { font-size:21px; }
  .r-bloom-home .r-header-new .r-topbar { gap:8px; }

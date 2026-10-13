@@ -11,6 +11,8 @@ import { useNavigate, useLocation } from "react-router-dom"
 import { api } from "./lib/api"
 import type { RentalProperty, RentalUser } from "../../server/shared/rentals"
 type RentalSession = {
+  digilockerRequired?: boolean
+  digilockerConfigured?: boolean
   user: RentalUser | null
   csrf: string
   paymentsConfigured: boolean

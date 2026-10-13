@@ -25,6 +25,9 @@ try {
         EMAIL_FROM: "",
         S3_BUCKET: "",
         LOCAL_POSTGRES: "0",
+        DIGILOCKER_REQUIRED: "0",
+        DIGILOCKER_CLIENT_ID: "",
+        DIGILOCKER_CLIENT_SECRET: "",
       },
     }
   )

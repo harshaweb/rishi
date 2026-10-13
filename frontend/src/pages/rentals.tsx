@@ -786,7 +786,7 @@ function Skeletons() {
     </div>
   )
 }
-function RentalVideo({ className = "", label, background = false, paused = false, source = "/videos/stay-short-02" }: { className?: string; label: string; background?: boolean; paused?: boolean; source?: string }) {
+function RentalVideo({ className = "", label, background = false, paused = false, source = "/videos/stay-short-02", poster }: { className?: string; label: string; background?: boolean; paused?: boolean; source?: string; poster?: string }) {
   const ref = useRef<HTMLVideoElement>(null)
   const [reducedMotion, setReducedMotion] = useState(true)
   useEffect(() => {
@@ -833,7 +833,7 @@ function RentalVideo({ className = "", label, background = false, paused = false
       loop
       playsInline
       preload="none"
-      poster={background ? "/gallery/photo-01.jpg" : `${source}.jpg`}
+      poster={poster ?? (background ? "/gallery/photo-01.jpg" : `${source}.jpg`)}
       aria-label={label}
       onPlay={(event) => {
         // A queued play event can arrive after another visible clip paused it.
@@ -1107,7 +1107,7 @@ function HomePage() {
     <>
       <div className="r-container r-home">
         <div className="r-home-intro">
-          <RentalVideo className="r-bloom-hero-video" label="Omshivraj property preview" source="/videos/homepage-stays" background paused={heroPaused} />
+          <RentalVideo className="r-bloom-hero-video" label="Omshivraj property preview" source="/videos/homepage-tour" poster="/videos/homepage-tour.jpg" background paused={heroPaused} />
           <div className="r-home-hero-content">
             <h1>Your next stay.<br />Hello, Omshivraj.</h1>
             <p>Explore flats and homes across Delhi & NCR. Choose your dates, find the right space, and request your stay.</p>

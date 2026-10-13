@@ -2505,6 +2505,7 @@ function RentalSite() {
   const { pathname } = useLocation(),
     { notice, sessionError } = useRental()
   const adminWorkspace = pathname === "/admin" || pathname.startsWith("/admin/")
+  const accountPage = ["/login", "/signup", "/forgot-password", "/reset-password", "/verify-email"].includes(pathname)
   const workspace = [
     "/login",
     "/signup",
@@ -2575,7 +2576,7 @@ function RentalSite() {
       {!adminWorkspace && (
         <>
           <Footer />
-          <nav className="r-mobile-nav" aria-label="Mobile navigation">
+          {!accountPage && <nav className="r-mobile-nav" aria-label="Mobile navigation">
             <Link
               to="/search"
               aria-current={
@@ -2613,7 +2614,7 @@ function RentalSite() {
               <Users size={21} />
               Profile
             </Link>
-          </nav>
+          </nav>}
         </>
       )}
       {notice && (

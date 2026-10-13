@@ -348,9 +348,9 @@ function Auth() {
             )}
             {signup && (
               <label className="r-check">
-                <input type="checkbox" name="consent" required />I agree to the{" "}
-                <Link to="/terms">terms</Link> and{" "}
-                <Link to="/privacy">privacy policy</Link>.
+                <input type="checkbox" name="consent" required />
+                <span>I agree to the <Link to="/terms">terms</Link> and{" "}
+                <Link to="/privacy">privacy policy</Link>.</span>
               </label>
             )}
           </Form>

@@ -124,7 +124,15 @@ export function isRentalPath(path: string) {
 }
 function Brand() {
   return (
-    <Link className="r-brand" to="/" aria-label="Omshivraj home">
+    <Link
+      className="r-brand"
+      to="/"
+      aria-label="Omshivraj home"
+      onClick={(event) => {
+        if (event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey)
+          window.scrollTo({ top: 0, left: 0, behavior: "instant" })
+      }}
+    >
       <span className="r-brand-symbol">
         <Home strokeWidth={2.4} />
         <Heart size={10} />

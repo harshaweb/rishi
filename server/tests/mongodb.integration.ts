@@ -218,6 +218,17 @@ try {
     "Property details and images"
   )
   equal(
+    (await request(app).get("/api/rental/properties/test-delhi-stay")).body
+      .address,
+    "Delhi, India",
+    "Public property details keep the street address private"
+  )
+  equal(
+    (await request(app).get("/api/rental/search")).body.items[0].address,
+    "Delhi, India",
+    "Public search keeps the street address private"
+  )
+  equal(
     (await request(app).get("/api/rental/config")).body.categories.includes(
       "City stays"
     ),
@@ -259,6 +270,13 @@ try {
     payload = booking(10, key)
   const first = await send(guest, "post", "/bookings", payload)
   equal(first.status, 201, "Create booking transaction")
+  equal(
+    (await guest.agent.get("/api/rental/bookings")).body.find(
+      (row: { id: string }) => row.id === first.body.id
+    )?.address,
+    "Delhi, India",
+    "Pending reservation does not disclose the street address"
+  )
   equal(
     (await send(guest, "post", "/bookings", payload)).body.id,
     first.body.id,
@@ -315,6 +333,13 @@ try {
     ).paymentStatus,
     "PAY_AT_PROPERTY",
     "Trips includes confirmed reservation"
+  )
+  equal(
+    (await guest.agent.get("/api/rental/bookings")).body.find(
+      (row: { id: string }) => row.id === first.body.id
+    )?.address,
+    base.address,
+    "Confirmed guest receives the full property address"
   )
   equal(
     (await send(other, "post", `/bookings/${first.body.id}/cancel`)).status,
@@ -499,9 +524,19 @@ try {
     slug: "new-noida-stay",
     city: "Noida",
     title: "New Noida stay",
+    latitude: "",
+    longitude: "",
     amenities: ["Wi-Fi"],
   })
   equal(create.status, 201, "Approved host creates draft listing")
+  const createdLocation = (
+    await newHost.agent.get(`/api/rental/host/listings/${create.body.id}`)
+  ).body
+  equal(
+    [createdLocation.latitude, createdLocation.longitude],
+    [null, null],
+    "Blank property coordinates stay unknown instead of becoming zero"
+  )
   equal(
     (
       await send(host, "patch", `/host/listings/${create.body.id}`, {
@@ -519,6 +554,14 @@ try {
     ).status,
     200,
     "Listing edit"
+  )
+  const editedLocation = (
+    await newHost.agent.get(`/api/rental/host/listings/${create.body.id}`)
+  ).body
+  equal(
+    [editedLocation.latitude, editedLocation.longitude],
+    [null, null],
+    "Editing a property preserves unknown location coordinates"
   )
   equal(
     (

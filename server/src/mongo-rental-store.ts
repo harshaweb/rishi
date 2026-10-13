@@ -191,7 +191,9 @@ function propertyPipeline(filter: Filter<Row>, publicOnly: boolean) {
           as: "categories",
         },
       },
-      { $match: { categories: { $elemMatch: { active: true } } } }
+      { $match: { categories: { $elemMatch: { active: true } } } },
+      // Full street addresses belong to confirmed reservations and host editing.
+      { $set: { address: { $concat: ["$city", ", India"] } } }
     )
   return pipeline
 }
@@ -517,6 +519,13 @@ export async function bookingRows(filter: Filter<Row>) {
         $set: {
           title: "$property.title",
           city: "$property.city",
+          address: {
+            $cond: [
+              { $in: ["$status", ["CONFIRMED", "COMPLETED"]] },
+              "$property.address",
+              { $concat: ["$property.city", ", India"] },
+            ],
+          },
           slug: "$property.slug",
           hostId: "$property.hostId",
           guestName: "$guest.name",

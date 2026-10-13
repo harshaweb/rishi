@@ -122,6 +122,15 @@ export function isRentalPath(path: string) {
         path.startsWith(p + "/"))
   )
 }
+function hasPropertyCoordinates(property: RentalProperty) {
+  return typeof property.latitude === "number" && Number.isFinite(property.latitude) &&
+    typeof property.longitude === "number" && Number.isFinite(property.longitude)
+}
+function propertyMapUrl(property: RentalProperty) {
+  return hasPropertyCoordinates(property)
+    ? `https://www.openstreetmap.org/?mlat=${property.latitude}&mlon=${property.longitude}#map=13/${property.latitude}/${property.longitude}`
+    : `https://www.openstreetmap.org/search?query=${encodeURIComponent(`${property.city}, India`)}`
+}
 function Brand() {
   return (
     <Link
@@ -534,17 +543,6 @@ function Header() {
             <span>Find a stay</span>
           </Link>
           <Link to="/help" className={location.pathname === "/help" ? "active" : ""} aria-current={location.pathname === "/help" ? "page" : undefined}>Help & support</Link>
-          <Link
-            className={location.pathname === "/experiences" ? "active" : ""}
-            to="/experiences"
-          >
-            <span className="r-tab-art">
-              <Sparkles size={21} strokeWidth={1.8} />
-            </span>
-            <span>
-              Experiences<small>COMING LATER</small>
-            </span>
-          </Link>
         </nav>
         <div
           className={
@@ -1425,23 +1423,23 @@ function SearchPage() {
           {map && (
             <div className="r-map-panel">
               <h2>Explore the neighbourhood</h2>
-              {session?.mapsToken ? (
+              {session?.mapsToken && items.some(hasPropertyCoordinates) ? (
                 <iframe
                   title="Map of matching stays"
-                  src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12.html?access_token=${encodeURIComponent(session.mapsToken)}#9/${items[0].latitude}/${items[0].longitude}`}
+                  src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12.html?access_token=${encodeURIComponent(session.mapsToken)}#9/${items.find(hasPropertyCoordinates)!.latitude}/${items.find(hasPropertyCoordinates)!.longitude}`}
                 />
               ) : (
                 <>
                   <p className="r-muted">
-                    Interactive maps become available when the platform operator
-                    connects Mapbox. Locations below open in OpenStreetMap.
+                    Explore the location of each stay. Where a property location
+                    has not been supplied, the link opens its city map.
                   </p>
                   {items.slice(0, 12).map((p) => (
                     <a
                       key={p.id}
                       target="_blank"
                       rel="noreferrer"
-                      href={`https://www.openstreetmap.org/?mlat=${p.latitude}&mlon=${p.longitude}#map=13/${p.latitude}/${p.longitude}`}
+                      href={propertyMapUrl(p)}
                     >
                       <MapPin size={17} />
                       <span>
@@ -2159,14 +2157,14 @@ function StayPage() {
         </p>
         <a
           className="r-location-preview"
-          href={`https://www.openstreetmap.org/?mlat=${p.latitude}&mlon=${p.longitude}#map=13/${p.latitude}/${p.longitude}`}
+          href={propertyMapUrl(p)}
           target="_blank"
           rel="noreferrer"
         >
           <MapPin />
           <div>
             <b>Explore {p.city}</b>
-            <span>Open neighbourhood map</span>
+            <span>{hasPropertyCoordinates(p) ? "Open neighbourhood map" : "Open city map"}</span>
           </div>
           <ArrowUpRight />
         </a>

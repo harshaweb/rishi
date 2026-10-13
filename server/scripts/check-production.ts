@@ -90,6 +90,39 @@ if (databaseReady) {
         .countDocuments({ status: "PUBLISHED", demo: false })) > 0,
       "Real published inventory exists"
     )
+    const published = await client
+      .db()
+      .collection("RentalProperty")
+      .find(
+        { status: "PUBLISHED" },
+        { projection: { address: 1, city: 1, bookingMode: 1 } }
+      )
+      .toArray()
+    const incompleteAddresses = published.filter((property) => {
+      const normalize = (value: unknown) =>
+        String(value || "")
+          .replace(/[\s,]/g, "")
+          .toLowerCase()
+      const address = normalize(property.address),
+        city = normalize(property.city)
+      return (
+        !address ||
+        [city, `${city}india`, `${city}delhincrindia`].includes(address)
+      )
+    })
+    check(
+      incompleteAddresses.length === 0,
+      `Full property addresses supplied (${incompleteAddresses.length} published listings need updating)`
+    )
+    if (published.some((property) => property.bookingMode === "PAYMENT"))
+      check(
+        Boolean(
+          env.RAZORPAY_KEY_ID &&
+          env.RAZORPAY_KEY_SECRET &&
+          env.RAZORPAY_WEBHOOK_SECRET
+        ),
+        "Online-payment listings have complete payment configuration"
+      )
   } catch {
     check(
       false,

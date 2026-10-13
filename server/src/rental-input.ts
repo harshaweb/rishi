@@ -2,6 +2,11 @@ import { z } from "zod"
 import { rentalAmenities } from "../shared/rentals.js"
 import { rentalCity } from "../shared/rental-region.js"
 const text = (max: number) => z.string().trim().min(1).max(max)
+const coordinate = (min: number, max: number) =>
+  z.preprocess(
+    (value) => (value === "" || value === undefined ? null : value),
+    z.coerce.number().min(min).max(max).nullable()
+  )
 export const dateInput = z.object({
   checkIn: z.string(),
   checkOut: z.string(),
@@ -37,8 +42,8 @@ export const propertySchema = z.object({
   bedrooms: z.coerce.number().int().min(0).max(20),
   beds: z.coerce.number().int().min(1).max(30),
   bathrooms: z.coerce.number().int().min(1).max(20),
-  latitude: z.coerce.number().min(-90).max(90),
-  longitude: z.coerce.number().min(-180).max(180),
+  latitude: coordinate(-90, 90),
+  longitude: coordinate(-180, 180),
   cancellation: z.enum(["FLEXIBLE", "MODERATE", "STRICT"]).default("FLEXIBLE"),
   bookingMode: z.enum(["HOST_APPROVAL", "PAYMENT"]).default("HOST_APPROVAL"),
   instantBook: z.boolean().default(false),

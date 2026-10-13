@@ -42,8 +42,8 @@ export type RentalProperty = {
   bedrooms: number
   beds: number
   bathrooms: number
-  latitude: number
-  longitude: number
+  latitude: number | null
+  longitude: number | null
   amenities: string[]
   images: string[]
   status: string
@@ -67,6 +67,7 @@ export type RentalUser = {
   notifications?: boolean
 }
 export type RentalBooking = {
+  address?: string
   cancellation: string
   id: string
   reference: string

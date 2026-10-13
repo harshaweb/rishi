@@ -596,6 +596,9 @@ function Trips({ host = false }: { host?: boolean }) {
                   {b.reference}
                   {host && ` · ${b.guestName}`}
                 </p>
+                {b.address && ["CONFIRMED", "COMPLETED"].includes(b.status) && (
+                  <p><strong>Property address:</strong> {b.address}</p>
+                )}
                 <b>{money(b.total)}</b>
                 <p>
                   Payment: {b.paymentStatus.replaceAll("_", " ").toLowerCase()}
@@ -895,8 +898,8 @@ function HostIntro() {
           </Form>
         )}
         <p className="r-muted r-small">
-          Applications and listings require review. Demo properties are
-          illustrations, not verified accommodation.
+          Applications and listings require review. Add accurate property details,
+          photos, prices, and availability before submitting your listing.
         </p>
       </div>
     </div>
@@ -1006,8 +1009,6 @@ function ListingEditor({ id }: { id?: string }) {
               ["bedrooms", "Bedrooms", p?.bedrooms ?? 1],
               ["beds", "Beds", p?.beds || 1],
               ["bathrooms", "Bathrooms", p?.bathrooms || 1],
-              ["latitude", "Latitude", p?.latitude || 0],
-              ["longitude", "Longitude", p?.longitude || 0],
             ].map(([name, label, value]) => (
               <Field
                 key={String(name)}
@@ -1016,6 +1017,9 @@ function ListingEditor({ id }: { id?: string }) {
                 value={Number(value)}
                 type="number"
               />
+            ))}
+            {(["latitude", "longitude"] as const).map((name) => (
+              <Field key={name} name={name} label={`${name === "latitude" ? "Latitude" : "Longitude"} (optional)`} value={p?.[name] ?? ""} type="number" required={false} />
             ))}
             <Field
               name="checkInTime"
@@ -2375,7 +2379,7 @@ function Info({ path }: { path: string }) {
     ],
     "/terms": [
       "Clear expectations. Better stays.",
-      "Demo listings illustrate the platform and are not verified bookable accommodation. Host-approved requests require explicit host confirmation. Online payments require verified captured payment. Only use your own accommodation and accurate information.",
+      "Review the property details, dates, total price, house rules, and cancellation policy before requesting a stay. Host-approved requests require explicit host confirmation. Your Trips page shows your reservation status. For pay-at-property stays, payment is due at the property. Online payments are confirmed only after the payment provider verifies receipt. Hosts must provide accurate accommodation information and availability.",
     ],
     "/privacy": [
       "Your plans are personal.",

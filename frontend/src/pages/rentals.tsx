@@ -1058,13 +1058,41 @@ function HomePhotoGallery() {
   )
 }
 
+function HomeFlatCatalogue({ items, loading }: { items: RentalProperty[]; loading: boolean }) {
+  const [city, setCity] = useState("")
+  const cities = rentalCities.filter((name) => items.some((property) => property.city === name))
+  const visible = city ? items.filter((property) => property.city === city) : items
+  return (
+    <section id="all-flats" className="r-flat-catalogue" aria-labelledby="all-flats-heading">
+      <div className="r-section-heading">
+        <div>
+          <span className="r-kicker">FIND YOUR NEXT PLACE</span>
+          <h2 id="all-flats-heading">All flats in Delhi & NCR</h2>
+          <p>{loading ? "Loading your full collection…" : `${items.length} places to make yourself at home.`}</p>
+        </div>
+        <Link className="r-secondary" to="/search"><SlidersHorizontal size={16} /> More filters</Link>
+      </div>
+      <div className="r-flat-city-filters" aria-label="Filter flats by city">
+        {["", ...cities].map((name) => (
+          <button key={name} className={city === name ? "active" : ""} aria-pressed={city === name} onClick={() => setCity(name)}>
+            {name || "All flats"}<span>{name ? items.filter((property) => property.city === name).length : items.length}</span>
+          </button>
+        ))}
+      </div>
+      <p className="r-flat-result-count" role="status">Showing {visible.length} {city ? `flats in ${city}` : "flats across Delhi & NCR"}</p>
+      <div className="r-card-grid">
+        {visible.map((property) => <RentalCard key={property.id} property={property} />)}
+      </div>
+    </section>
+  )
+}
 function HomePage() {
   const { content } = useContent()
   const initial = content.rentals || []
   const query = useRentalResource<{ items: RentalProperty[] }>("/search")
   const items = query.data?.items || initial
   const more = useRentalResource<{ items: RentalProperty[] }>("/search?page=2")
-  const all = [...items, ...(more.data?.items || [])]
+  const all = Array.from(new Map([...items, ...(more.data?.items || [])].map((property) => [property.id, property])).values())
   const [category, setCategory] = useState("")
   const navigate = useNavigate()
   return (
@@ -1079,9 +1107,9 @@ function HomePage() {
               Beautiful stays in Delhi & Delhi NCR. A little more room to feel
               at home.
             </p>
-            <Link to="/search">
+            <a href="#all-flats">
               Explore the stays <ArrowUpRight size={17} />
-            </Link>
+            </a>
             <div className="r-hero-meta"><MapPin size={15} /><span>Delhi & Delhi NCR</span><i />Spaces to make your own</div>
           </div>
           <div className="r-hero-photo-note"><span>MAKE YOURSELF AT HOME</span><b>A little room for possibility.</b><Link to="/search" aria-label="Explore places to stay"><ArrowUpRight size={22} /></Link></div>
@@ -1121,6 +1149,8 @@ function HomePage() {
           <Skeletons />
         ) : (
           <>
+            {more.error && <ErrorBox message={more.error} retry={more.refresh} />}
+            <HomeFlatCatalogue items={all} loading={query.loading || more.loading} />
             {rentalCities.map((city, index) => {
               const cityStays = all.filter((p) => p.city === city)
               const showNearby = city === "Greater Noida" && !cityStays.length

@@ -511,6 +511,7 @@ function Header() {
     }
   }, [])
   const home = location.pathname === "/" || location.pathname === "/search"
+  const homepage = location.pathname === "/"
   const authNext = ["/login", "/signup"].includes(location.pathname)
     ? new URLSearchParams(location.search).get("next") || "/trips"
     : `${location.pathname}${location.search}`
@@ -535,14 +536,14 @@ function Header() {
           <Link
             className={home ? "active" : ""}
             aria-current={home ? "page" : undefined}
-            to="/"
+            to={homepage ? "/#all-flats" : "/"}
           >
             <span className="r-tab-art">
               <Home size={21} strokeWidth={1.8} />
             </span>
-            <span>Find a stay</span>
+            <span>{homepage ? "Flats" : "Find a stay"}</span>
           </Link>
-          <Link to="/help" className={location.pathname === "/help" ? "active" : ""} aria-current={location.pathname === "/help" ? "page" : undefined}>Help & support</Link>
+          <Link to={homepage ? "/#why-omshivraj" : "/help"} className={location.pathname === "/help" ? "active" : ""} aria-current={location.pathname === "/help" ? "page" : undefined}>{homepage ? "Why Omshivraj?" : "Help & support"}</Link>
         </nav>
         <div
           className={
@@ -552,7 +553,7 @@ function Header() {
           }
         >
           <Link to="/host" className="r-host-link">
-            Become a host
+            {homepage ? "Property owners" : "Become a host"}
             <ArrowUpRight size={15} />
           </Link>
           <button
@@ -565,14 +566,14 @@ function Header() {
           {!session?.user && (
             <nav className="r-header-auth" aria-label="Account access">
               <Link to={`/login?next=${encodeURIComponent(authNext)}`}>
-                Log in
+                {homepage ? "Login / Join" : "Log in"}
               </Link>
-              <Link
+              {!homepage && <Link
                 className="r-header-signup"
                 to={`/signup?next=${encodeURIComponent(authNext)}`}
               >
                 Sign up
-              </Link>
+              </Link>}
             </nav>
           )}
           <div ref={ref} className="r-menu-wrap">
@@ -785,8 +786,7 @@ function Skeletons() {
     </div>
   )
 }
-function RentalVideo({ className = "", label }: { className?: string; label: string }) {
-  const source = "/videos/stay-short-02"
+function RentalVideo({ className = "", label, background = false, paused = false, source = "/videos/stay-short-02" }: { className?: string; label: string; background?: boolean; paused?: boolean; source?: string }) {
   const ref = useRef<HTMLVideoElement>(null)
   const [reducedMotion, setReducedMotion] = useState(true)
   useEffect(() => {
@@ -796,21 +796,21 @@ function RentalVideo({ className = "", label }: { className?: string; label: str
     let visible = false
     const updatePreference = () => {
       setReducedMotion(preference.matches)
-      if (preference.matches) video.pause()
+      if (preference.matches || paused) video.pause()
       else if (visible) void video.play().catch(() => {})
     }
     setReducedMotion(preference.matches)
     const observer = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting && entry.intersectionRatio >= 0.35
       if (visible) {
-        if (!video.getAttribute("src")) video.src = `${source}.mp4`
-        if (!preference.matches && document.visibilityState === "visible")
+        if (video.getAttribute("src") !== `${source}.mp4`) video.src = `${source}.mp4`
+        if (!paused && !preference.matches && document.visibilityState === "visible")
           void video.play().catch(() => {})
       } else video.pause()
     }, { threshold: [0, 0.35] })
     const tabVisibility = () => {
       if (document.hidden) video.pause()
-      else if (visible && !preference.matches) void video.play().catch(() => {})
+      else if (visible && !paused && !preference.matches) void video.play().catch(() => {})
     }
     observer.observe(video)
     preference.addEventListener("change", updatePreference)
@@ -821,18 +821,19 @@ function RentalVideo({ className = "", label }: { className?: string; label: str
       document.removeEventListener("visibilitychange", tabVisibility)
       video.pause()
     }
-  }, [source])
+  }, [source, paused])
   return (
     <video
       ref={ref}
       className={`r-property-video r-short-video ${className}`}
-      controls
-      autoPlay={!reducedMotion}
+      controls={!background}
+      autoPlay={!reducedMotion && !paused}
+      aria-hidden={background || undefined}
       muted
       loop
       playsInline
       preload="none"
-      poster={`${source}.jpg`}
+      poster={background ? "/gallery/photo-01.jpg" : `${source}.jpg`}
       aria-label={label}
       onPlay={(event) => {
         // A queued play event can arrive after another visible clip paused it.
@@ -842,7 +843,7 @@ function RentalVideo({ className = "", label }: { className?: string; label: str
         })
       }}
     >
-      Your browser does not support video. <a href={`${source}.mp4`}>Open the video</a>.
+      {!background && <>Your browser does not support video. <a href={`${source}.mp4`}>Open the video</a>.</>}
     </video>
   )
 }
@@ -1100,32 +1101,60 @@ function HomePage() {
   const more = useRentalResource<{ items: RentalProperty[] }>("/search?page=2")
   const all = Array.from(new Map([...items, ...(more.data?.items || [])].map((property) => [property.id, property])).values())
   const [category, setCategory] = useState("")
+  const [heroPaused, setHeroPaused] = useState(false)
   const navigate = useNavigate()
   return (
     <>
       <div className="r-container r-home">
         <div className="r-home-intro">
-          <img className="r-home-hero-image" src={uploadedPhotos[0].src} alt={uploadedPhotos[0].alt} fetchPriority="high" />
+          <RentalVideo className="r-bloom-hero-video" label="Omshivraj property preview" source="/videos/homepage-stays" background paused={heroPaused} />
           <div className="r-home-hero-content">
-            <span className="r-kicker">OMSHIVRAJ · DELHI & NCR</span>
-            <h1>Great stays.<br /><em>Bright days.</em></h1>
-            <p>
-              Find your space in Delhi & NCR. Explore comfortable flats,
-              welcoming homes, and room for your next great trip.
-            </p>
-            <a href="#all-flats">
-              Find your stay <ArrowUpRight size={17} />
-            </a>
-            <div className="r-hero-meta"><MapPin size={15} /><span>Delhi & Delhi NCR</span><i />Spaces to make your own</div>
+            <h1>Your next stay.<br />Hello, Omshivraj.</h1>
+            <p>Explore flats and homes across Delhi & NCR. Choose your dates, find the right space, and request your stay.</p>
+            <form className="r-bloom-hero-search" action="/search" method="get" onSubmit={(event) => {
+              event.preventDefault()
+              const destination = String(new FormData(event.currentTarget).get("destination") || "")
+              navigate(destination ? `/search?destination=${encodeURIComponent(destination)}` : "/search")
+            }}>
+              <Search size={20} aria-hidden="true" />
+              <select name="destination" aria-label="Choose your destination" defaultValue="">
+                <option value="">Book a stay in Delhi & NCR</option>
+                {rentalCities.map((city) => <option key={city} value={city}>{city}</option>)}
+              </select>
+              <button type="submit" aria-label="Search stays"><ArrowUpRight size={21} /></button>
+            </form>
+            <span className="r-bloom-direct"><ShieldCheck size={16} /> Direct requests. Host-confirmed stays.</span>
           </div>
-          <div className="r-hero-photo-note"><span>MORE ROOM. MORE POSSIBILITY.</span><b>Check in to brighter days.</b><Link to="/search" aria-label="Explore places to stay"><ArrowUpRight size={22} /></Link></div>
+          <button className="r-hero-film-toggle" type="button" onClick={() => setHeroPaused((value) => !value)} aria-pressed={heroPaused}>{heroPaused ? "Play video" : "Pause video"}</button>
         </div>
-        <div className="r-discover-strip" aria-label="Ways to explore">
-          <Link to="/search?type=Apartment"><Building2 size={22} /><span><b>City stays, your way</b><small>Find your corner of Delhi NCR</small></span><ArrowUpRight size={18} /></Link>
-          <Link to="/search?type=Villa"><Home size={22} /><span><b>Room to reconnect</b><small>Villas for a change of pace</small></span><ArrowUpRight size={18} /></Link>
-          <Link to="/host"><Heart size={22} /><span><b>Make space for more</b><small>Share your home with new guests</small></span><ArrowUpRight size={18} /></Link>
+        <section className="r-bloom-welcome">
+          <div>
+            <h2>Your next stay,<br />made simple.</h2>
+            <p>A city break, a work trip, or a little more time together. Find your place, explore the details, and keep every request in one account.</p>
+            <a href="#all-flats" className="r-primary">Explore our stays <ArrowUpRight size={18} /></a>
+          </div>
+          <Link to="/search?destination=Delhi" className="r-bloom-welcome-photo">
+            <img src="/gallery/photo-03.jpg" alt="A balcony with seating and a view of the neighbourhood" loading="lazy" />
+            <span><b>Omshivraj.</b>Find your corner of Delhi & NCR.<ArrowUpRight size={20} /></span>
+          </Link>
+        </section>
+        <div className="r-bloom-featured">
+          <Section title="Stays across Delhi & NCR" subtitle="Explore our flats and homes in Delhi, Noida, Gurugram, and Ghaziabad." items={all} query="" />
         </div>
-        <HomePhotoGallery />
+        <section id="why-omshivraj" className="r-bloom-benefits">
+          <h2>The Omshivraj way.</h2>
+          <p>A little more information. A little less guesswork. Make your next stay your own.</p>
+          <div className="r-bloom-benefit-grid">
+            {[
+              { image: "/gallery/photo-08.jpg", title: "Find your space", description: "Compare flats, villas, and homes. See the photos, amenities, and guest capacity before you choose." },
+              { image: "/gallery/photo-14.jpg", title: "Plan with clarity", description: "Choose your dates and check availability. Review the total price and cancellation terms before requesting." },
+              { image: "/gallery/photo-22.jpg", title: "Stay connected", description: "Message your host, follow your reservation, and keep your trip details together in your account." },
+            ].map(({ image, title, description }) => (
+              <article key={title}><img src={image} alt={title} loading="lazy" /><h3>{title}</h3><p>{description}</p></article>
+            ))}
+          </div>
+          <Link to="/help">See how booking works <ArrowUpRight size={18} /></Link>
+        </section>
         <div className="r-category-nav" aria-label="Stay categories">
           {rentalCategories.map((c, i) => {
             const Icon = icons[i]
@@ -1213,6 +1242,7 @@ function HomePage() {
             />
           </>
         )}
+        <HomePhotoGallery />
         <div className="r-host-banner">
           <div>
             <span className="r-kicker">GOOD SPACES ARE MEANT TO BE SHARED</span>
@@ -2502,8 +2532,13 @@ function Footer() {
 }
 function RentalSite() {
   const config = useRentalResource<{ settings: { banner?: string } }>("/config")
-  const { pathname } = useLocation(),
+  const { pathname, hash } = useLocation(),
     { notice, sessionError } = useRental()
+  useEffect(() => {
+    if (!hash) return
+    const frame = requestAnimationFrame(() => document.getElementById(hash.slice(1))?.scrollIntoView({ block: "start" }))
+    return () => cancelAnimationFrame(frame)
+  }, [pathname, hash])
   const adminWorkspace = pathname === "/admin" || pathname.startsWith("/admin/")
   const accountPage = ["/login", "/signup", "/forgot-password", "/reset-password", "/verify-email"].includes(pathname)
   const workspace = [
@@ -2535,6 +2570,8 @@ function RentalSite() {
       className={
         adminWorkspace
           ? "rental-app r-admin-page"
+          : pathname === "/"
+            ? "rental-app r-design-refresh r-bloom-home"
           : pathname.startsWith("/stays/")
             ? "rental-app r-design-refresh r-stay-page"
             : "rental-app r-design-refresh"

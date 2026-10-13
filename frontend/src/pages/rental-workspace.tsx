@@ -1701,16 +1701,14 @@ function Admin() {
             <section className="r-admin-command">
               <div>
                 <span className="r-admin-command-kicker">
-                  OMSHIVRAJ · BUSINESS OVERVIEW
+                  YOUR BUSINESS, AT A GLANCE
                 </span>
                 <h2>
-                  Your stays.
-                  <br />
-                  <em>Your business, in view.</em>
+                  Every stay starts here.
                 </h2>
                 <p>
-                  Manage your properties, look after your guests, and keep every
-                  reservation moving.
+                  Your properties, guests, and reservations. One workspace to
+                  keep everything moving.
                 </p>
                 <div className="r-admin-command-actions">
                   <Link to="/admin/listings">

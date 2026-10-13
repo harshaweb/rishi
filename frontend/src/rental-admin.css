@@ -1,0 +1,98 @@
+/* Administration uses its own palette and layout without changing guest pages. */
+.r-design-refresh .r-admin-workspace { padding:24px; background:#f5f6f8; }
+.r-admin-workspace .r-control-center { --admin-ink:#22272c; --admin-line:#e6e8ec; background:#f5f6f8; border:1px solid var(--admin-line); border-radius:18px; grid-template-columns:244px minmax(0,1fr); overflow:clip; box-shadow:0 12px 40px #20202006; }
+.r-admin-workspace .r-admin-sidebar { background:#20262c; border:0; padding:28px 18px 20px; }
+.r-admin-workspace .r-admin-brand { padding:0 10px 26px; border-color:#ffffff18; }
+.r-admin-workspace .r-admin-brand > span { background:#ffcc09; color:#202020; border-radius:12px; }
+.r-admin-workspace .r-admin-brand b { color:#fff; font-size:22px; letter-spacing:-.8px; }
+.r-admin-workspace .r-admin-brand small { color:#a6aeb7; font-size:9px; letter-spacing:1.4px; }
+.r-admin-workspace .r-admin-nav-label { color:#929ca7; font-size:10px; letter-spacing:1.5px; margin:24px 12px 10px; }
+.r-admin-workspace .r-admin-sidebar nav button { color:#c6cdd5; border-radius:9px; font-size:13px; padding:12px 14px; min-height:44px; }
+.r-admin-workspace .r-admin-sidebar nav button > svg { color:inherit; }
+.r-admin-workspace .r-admin-sidebar nav button.active { color:#202020; background:#ffcc09; box-shadow:none; font-weight:700; }
+.r-admin-workspace .r-admin-sidebar nav button:not(.active):hover { color:#fff; background:#ffffff0d; }
+.r-admin-workspace .r-admin-sidebar nav button em { color:#202020; background:#fff2b2; }
+.r-admin-workspace .r-admin-site-link { color:#f4d968; border-color:#ffffff20; }
+.r-admin-workspace .r-admin-identity { border-color:#ffffff20; color:#fff; }
+.r-admin-workspace .r-admin-identity b { color:#fff; }
+.r-admin-workspace .r-admin-identity small { color:#a6aeb7; }
+.r-admin-workspace .r-admin-identity > span { background:#39434d; color:#ffdf60; }
+.r-admin-workspace .r-admin-content { padding:32px; min-width:0; }
+.r-admin-workspace .r-admin-heading { margin-bottom:28px; gap:20px; }
+.r-admin-workspace .r-admin-breadcrumb { color:#727b85; font-size:11px; }
+.r-admin-workspace .r-admin-heading h1 { color:var(--admin-ink); font-family:inherit; font-size:28px; line-height:1.3; letter-spacing:-1px; }
+.r-admin-workspace .r-admin-heading p { color:#727b85; font-size:13px; line-height:1.6; }
+.r-admin-workspace :is(.r-secondary,.r-hosting-primary) { min-height:42px; border-radius:8px; font-size:12px; box-shadow:none; }
+.r-admin-workspace .r-hosting-primary { background:#22272c; border-color:#22272c; color:#fff; }
+.r-admin-workspace .r-admin-command { background:#ffcc09; color:#22272c; border-radius:14px; grid-template-columns:minmax(0,1fr) 220px; padding:28px 32px; gap:24px; margin-bottom:24px; }
+.r-admin-workspace .r-admin-command-kicker { color:#64520c; font-size:10px; letter-spacing:1.8px; }
+.r-admin-workspace .r-admin-command h2 { font-family:inherit; font-size:32px; font-weight:750; letter-spacing:-1.2px; margin:12px 0; color:#22272c; }
+.r-admin-workspace .r-admin-command p { color:#5e501b; font-size:13px; line-height:1.7; margin:0 0 20px; max-width:480px; }
+.r-admin-workspace .r-admin-command-actions a { border-color:#22272c35; color:#22272c; font-size:12px; min-height:42px; padding:10px 14px; }
+.r-admin-workspace .r-admin-command-actions a:first-child { background:#22272c; border-color:#22272c; color:#fff; }
+.r-admin-workspace .r-admin-command-summary { background:#ffffff60; border:1px solid #ffffff80; padding:20px; gap:8px; border-radius:12px; }
+.r-admin-workspace .r-admin-command-summary > svg { color:#74601c; width:22px; }
+.r-admin-workspace .r-admin-command-summary strong { color:#22272c; font-size:48px; font-weight:750; }
+.r-admin-workspace .r-admin-command-summary > span { color:#5e501b; }
+.r-admin-workspace .r-admin-command-summary small { color:#5e501b; border-color:#22272c20; font-size:10px; }
+.r-admin-workspace .r-admin-stats { gap:16px; }
+.r-admin-workspace .r-admin-stat { padding:22px; border:1px solid var(--admin-line); border-radius:12px; background:#fff; box-shadow:0 3px 8px #20202003; }
+.r-admin-workspace .r-admin-stat > div > span { font-size:12px; font-weight:600; color:#67727d; }
+.r-admin-workspace .r-admin-stat i { background:#fff5cd; color:#917000; width:36px; height:36px; border-radius:10px; }
+.r-admin-workspace .r-admin-stat.users i { background:#edf0ff; color:#5a61b4; }
+.r-admin-workspace .r-admin-stat.bookings i { background:#e6f5ef; color:#32856b; }
+.r-admin-workspace .r-admin-stat.paid i { background:#f2ebfa; color:#8a5bb0; }
+.r-admin-workspace .r-admin-stat h2 { color:#22272c; font-family:inherit; font-weight:750; font-size:32px; letter-spacing:-1px; margin:16px 0 8px; overflow-wrap:anywhere; }
+.r-admin-workspace .r-admin-stat p { color:#7a838c; font-size:11px; line-height:1.6; min-height:34px; }
+.r-admin-workspace .r-admin-stat-link { color:#414b55; padding-top:14px; border-top:1px solid #eef0f3; display:flex; justify-content:space-between; font-size:11px; }
+.r-admin-workspace .r-admin-review-strip { background:#fff; border:1px solid var(--admin-line); border-radius:12px; margin:24px 0; }
+.r-admin-workspace :is(.r-admin-review-icon,.r-admin-review-strip > a b,.r-admin-review-strip > a svg) { color:#8c6a00; }
+.r-admin-workspace .r-admin-review-icon { background:#fff5cd; border-radius:12px; }
+.r-admin-workspace .r-admin-shortcuts { gap:14px; }
+.r-admin-workspace .r-admin-shortcuts > a { border:1px solid var(--admin-line); background:#fff; border-radius:12px; padding:18px; transition:border-color .15s,background .15s; }
+.r-admin-workspace .r-admin-shortcuts > a:hover { border-color:#ddba39; background:#fffdf5; }
+.r-admin-workspace .r-admin-shortcuts > a > svg:first-child { color:#967200; background:#fff6d7; border-radius:8px; padding:8px; width:36px; height:36px; }
+.r-admin-workspace .r-admin-service-status { background:#f0f2f5; border:1px solid var(--admin-line); border-radius:12px; }
+.r-admin-workspace :is(.r-admin-card,.r-admin-records,.r-hosting-featured) { background:#fff; border:1px solid var(--admin-line); border-radius:12px; box-shadow:none; }
+.r-admin-workspace .r-admin-overview-panels { grid-template-columns:minmax(0,1.65fr) minmax(0,1fr); gap:20px; }
+.r-admin-workspace .r-admin-card-heading h2 { color:#22272c; font-family:inherit; font-size:17px; font-weight:700; letter-spacing:-.3px; }
+.r-admin-workspace .r-admin-card-heading > a { color:#7a5d00; font-size:12px; }
+.r-admin-workspace .r-hosting-reservation-tabs button[aria-pressed="true"] { background:#fff3bf; color:#705500; border-color:#ffdb51; }
+.r-admin-workspace .r-admin-activity > div > span { background:#f3f4f6; color:#65707b; }
+.r-admin-workspace table th { background:#f8f9fb; color:#7a838c; font-size:10px; text-transform:uppercase; letter-spacing:.7px; }
+.r-admin-workspace table td { font-size:12px; padding-block:18px; border-color:#eef0f3; }
+.r-admin-workspace table tbody tr:hover { background:#fffdf5; }
+.r-admin-workspace .r-admin-toolbar { gap:16px; }
+.r-admin-workspace :is(button,a,input,select,textarea):focus-visible { outline:3px solid #b48a00; outline-offset:3px; }
+@media(max-width:1200px) {
+ .r-admin-workspace .r-control-center { grid-template-columns:210px minmax(0,1fr); }
+ .r-admin-workspace .r-admin-content { padding:24px; }
+ .r-admin-workspace .r-admin-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .r-admin-workspace .r-admin-overview-panels { grid-template-columns:minmax(0,1fr); }
+}
+@media(max-width:900px) {
+ .r-admin-workspace .r-admin-command { grid-template-columns:minmax(0,1fr); padding:24px; }
+ .r-admin-workspace .r-admin-command-summary { display:none; }
+}
+@media(max-width:760px) {
+ .r-design-refresh .r-admin-workspace { padding:12px; }
+ .r-admin-workspace .r-control-center { display:block; border-radius:12px; }
+ .r-admin-workspace .r-admin-sidebar { position:static; padding:18px 14px 12px; }
+ .r-admin-workspace .r-admin-brand { padding:0 4px 16px; }
+ .r-admin-workspace .r-admin-sidebar nav { display:flex; overflow-x:auto; gap:8px; padding:4px 0 10px; scrollbar-width:thin; scrollbar-color:#65707b #20262c; }
+ .r-admin-workspace .r-admin-sidebar nav > div { flex-shrink:0; }
+ .r-admin-workspace .r-admin-nav-label { display:none; }
+ .r-admin-workspace .r-admin-sidebar nav button { white-space:nowrap; padding:10px 14px; }
+ .r-admin-workspace .r-admin-content { padding:22px 16px; }
+ .r-admin-workspace .r-admin-heading h1 { font-size:24px; }
+ .r-admin-workspace .r-admin-command h2 { font-size:27px; }
+ .r-admin-workspace .r-admin-command { padding:24px 20px; }
+ .r-admin-workspace .r-admin-stats { gap:12px; }
+ .r-admin-workspace .r-admin-stat { padding:16px; }
+ .r-admin-workspace .r-admin-stat h2 { font-size:28px; }
+ .r-admin-workspace .r-admin-shortcuts { grid-template-columns:minmax(0,1fr); }
+ .r-admin-workspace .r-admin-review-strip { flex-wrap:wrap; }
+}
+@media(max-width:380px) {
+ .r-admin-workspace .r-admin-stats { grid-template-columns:minmax(0,1fr); }
+}

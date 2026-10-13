@@ -1107,18 +1107,18 @@ function HomePage() {
         <div className="r-home-intro">
           <img className="r-home-hero-image" src={uploadedPhotos[0].src} alt={uploadedPhotos[0].alt} fetchPriority="high" />
           <div className="r-home-hero-content">
-            <span className="r-kicker">DELHI & NCR · STAYS, REIMAGINED</span>
-            <h1>Stay somewhere<br />worth slowing<br /><em>down.</em></h1>
+            <span className="r-kicker">OMSHIVRAJ · DELHI & NCR</span>
+            <h1>Great stays.<br /><em>Bright days.</em></h1>
             <p>
-              Beautiful stays in Delhi & Delhi NCR. A little more room to feel
-              at home.
+              Find your space in Delhi & NCR. Explore comfortable flats,
+              welcoming homes, and room for your next great trip.
             </p>
             <a href="#all-flats">
-              Explore the stays <ArrowUpRight size={17} />
+              Find your stay <ArrowUpRight size={17} />
             </a>
             <div className="r-hero-meta"><MapPin size={15} /><span>Delhi & Delhi NCR</span><i />Spaces to make your own</div>
           </div>
-          <div className="r-hero-photo-note"><span>MAKE YOURSELF AT HOME</span><b>A little room for possibility.</b><Link to="/search" aria-label="Explore places to stay"><ArrowUpRight size={22} /></Link></div>
+          <div className="r-hero-photo-note"><span>MORE ROOM. MORE POSSIBILITY.</span><b>Check in to brighter days.</b><Link to="/search" aria-label="Explore places to stay"><ArrowUpRight size={22} /></Link></div>
         </div>
         <div className="r-discover-strip" aria-label="Ways to explore">
           <Link to="/search?type=Apartment"><Building2 size={22} /><span><b>City stays, your way</b><small>Find your corner of Delhi NCR</small></span><ArrowUpRight size={18} /></Link>

@@ -1592,14 +1592,15 @@ function identityBookingDraft(slug: string) {
   const empty = { checkIn: "", checkOut: "", guests: 1, coupon: "" }
   if (
     typeof window === "undefined" ||
-    !new URLSearchParams(window.location.search).has("digilocker")
+    (!new URLSearchParams(window.location.search).has("digilocker") &&
+      new URLSearchParams(window.location.search).get("booking") !== "resume")
   )
     return empty
   try {
     const value = JSON.parse(
       sessionStorage.getItem(`omshivraj-digilocker:${slug}`) || "null"
     )
-    if (!value || value.expiresAt < Date.now()) return empty
+    if (!value || !Number.isFinite(value.expiresAt) || value.expiresAt < Date.now()) return empty
     return {
       checkIn: typeof value.checkIn === "string" ? value.checkIn : "",
       checkOut: typeof value.checkOut === "string" ? value.checkOut : "",
@@ -1690,24 +1691,20 @@ function StayPage() {
         "/digilocker/start",
         { consent: identityConsent, returnTo: `/stays/${slug}` }
       )
-      try {
-        sessionStorage.setItem(
-          `omshivraj-digilocker:${slug}`,
-          JSON.stringify({
-            checkIn,
-            checkOut,
-            guests,
-            coupon,
-            expiresAt: Date.now() + 15 * 60000,
-          })
-        )
-      } catch {
-        /* Verification remains available if browser storage is disabled. */
-      }
+      saveBookingDraft()
       window.location.assign(response.url)
     } catch (e) {
       setError((e as Error).message)
       setBusy(false)
+    }
+  }
+  function saveBookingDraft() {
+    try {
+      sessionStorage.setItem(`omshivraj-digilocker:${slug}`, JSON.stringify({
+        checkIn, checkOut, guests, coupon, expiresAt: Date.now() + 15 * 60000,
+      }))
+    } catch {
+      /* Continue even when the browser disables session storage. */
     }
   }
   function clearQuote() {
@@ -1738,7 +1735,8 @@ function StayPage() {
   async function reserve() {
     if (!p) return
     if (!session?.user) {
-      navigate(`/login?next=${encodeURIComponent(`/stays/${slug}`)}`)
+      saveBookingDraft()
+      navigate(`/login?next=${encodeURIComponent(`/stays/${slug}?booking=resume`)}`)
       return
     }
     if (!quote) {
@@ -1767,6 +1765,11 @@ function StayPage() {
         coupon,
         idempotencyKey: bookingKey.current,
       })
+      try {
+        sessionStorage.removeItem(`omshivraj-digilocker:${slug}`)
+      } catch {
+        /* The saved draft expires independently. */
+      }
       notify(
         `Request ${booking.reference} saved. ${p.bookingMode === "HOST_APPROVAL" ? "Awaiting host approval." : "Complete payment to confirm."}`
       )
@@ -2076,6 +2079,7 @@ function StayPage() {
                   type="date"
                   min={today()}
                   value={checkIn}
+                  onInput={(e) => chooseArrival(e.currentTarget.value)}
                   onChange={(e) => chooseArrival(e.target.value)}
                 />
               </label>
@@ -2088,6 +2092,7 @@ function StayPage() {
                   max={checkIn ? nextDate(checkIn, 90) : undefined}
                   disabled={!checkIn}
                   value={checkOut}
+                  onInput={(e) => chooseDeparture(e.currentTarget.value)}
                   onChange={(e) => chooseDeparture(e.target.value)}
                 />
               </label>

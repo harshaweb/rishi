@@ -1042,7 +1042,17 @@ function HomeFlatCatalogue({ items, loading }: { items: RentalProperty[]; loadin
         </div>
         <Link className="r-secondary" to="/search"><SlidersHorizontal size={16} /> More filters</Link>
       </div>
-      <div className="r-flat-city-filters r-city-tabs-only" aria-label="Filter flats by city">
+      <div className="r-catalogue-film" aria-label="Property walkthrough">
+        <RentalVideo source="/videos/product-tour-oct14" label="Property walkthrough — bedroom and lounge" className="r-catalogue-film-video" />
+        <div className="r-catalogue-film-copy">
+          <span className="r-kicker">INSIDE THE SPACE</span>
+          <h3>A closer look at your next stay.</h3>
+          <p>Explore the bedroom, lounge and finishing touches in this property walkthrough.</p>
+          <span className="r-catalogue-film-meta">10-second walkthrough · Tap to turn on sound</span>
+          <a className="r-secondary" href="#city-flat-options">Explore the flats <ArrowUpRight size={16} /></a>
+        </div>
+      </div>
+      <div id="city-flat-options" className="r-flat-city-filters r-city-tabs-only" aria-label="Filter flats by city">
         {cities.map((name) => (
           <button key={name} className={city === name ? "active" : ""} aria-pressed={city === name} onClick={() => setCity(name)}>
             {name}<span>{items.filter((property) => property.city === name).length}</span>

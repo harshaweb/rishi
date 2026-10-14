@@ -402,6 +402,20 @@ body:has(.rental-app) { min-width:0; }
   min-width: 0;
 }
 .r-booking-review h3 { margin:0 0 6px; font-size:22px; }
+.r-catalogue-film { display:flex; align-items:center; gap:clamp(24px,4vw,64px); padding:24px; margin:24px 0 30px; background:#fffbea; border:1px solid #ecdfa8; border-radius:16px; }
+.r-catalogue-film .r-catalogue-film-video { display:block; width:180px; max-width:100%; height:auto; max-height:none; aspect-ratio:9/16; object-fit:contain; background:#151515; border-radius:12px; flex-shrink:0; margin:0; }
+.r-catalogue-film-copy { max-width:540px; }
+.r-catalogue-film-copy h3 { font-size:clamp(24px,3vw,38px); line-height:1.15; margin:12px 0; color:#262626; }
+.r-catalogue-film-copy p { line-height:1.7; color:#625d4c; font-size:15px; }
+.r-catalogue-film-meta { display:block; font-size:12px; color:#716948; margin:18px 0; }
+.r-catalogue-film-copy .r-secondary { display:inline-flex; align-items:center; gap:16px; background:#ffcc09; color:#292300; border-color:#ffcc09; }
+#city-flat-options { scroll-margin-top:140px; }
+@media(max-width:600px) {
+ .r-catalogue-film { flex-direction:column; padding:20px; gap:20px; align-items:stretch; }
+ .r-catalogue-film .r-catalogue-film-video { width:min(100%,225px); align-self:center; }
+ .r-catalogue-film-copy { text-align:center; }
+ .r-catalogue-film-copy h3 { font-size:26px; }
+}
 .r-booking-review > p { line-height:1.65; color:#625b4b; font-size:14px; }
 .r-booking-review .r-record { margin:20px 0; }
 .r-booking-review .r-record > div { display:flex; justify-content:space-between; gap:20px; padding:9px 0; border-bottom:1px solid #eee; }

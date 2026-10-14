@@ -2659,7 +2659,7 @@ function Footer() {
     "More NCR": ["Gurugram", "Ghaziabad", "Faridabad"],
   }
   return (
-    <footer className="r-footer r-footer-refined">
+    <footer className="r-footer r-footer-refined r-footer-compact">
       <div className="r-container">
         <div className="r-inspiration">
           <div className="r-footer-intro">
@@ -2672,6 +2672,8 @@ function Footer() {
               Explore stays <ArrowUpRight size={18} aria-hidden="true" />
             </Link>
           </div>
+          <details className="r-footer-destinations">
+            <summary>Browse destinations <ChevronRight size={15} aria-hidden="true" /></summary>
           <div
             className="r-inspiration-tabs"
             role="group"
@@ -2715,6 +2717,7 @@ function Footer() {
               ))
             )}
           </div>
+          </details>
         </div>
         <div className="r-footer-columns">
           <div className="r-footer-brand">

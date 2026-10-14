@@ -402,6 +402,44 @@ body:has(.rental-app) { min-width:0; }
   min-width: 0;
 }
 .r-booking-review h3 { margin:0 0 6px; font-size:22px; }
+.r-design-refresh .r-footer-compact { padding-top:0; padding-bottom:0; }
+.r-footer-compact .r-inspiration { padding:24px 0 16px; }
+.r-footer-compact .r-footer-intro { flex-direction:row; align-items:center; gap:16px; }
+.r-footer-compact .r-footer-intro :is(.r-footer-eyebrow,p) { display:none; }
+.r-design-refresh .r-footer-compact .r-inspiration h2 { font-size:24px; line-height:1.25; margin:0; letter-spacing:-.6px; }
+.r-footer-compact .r-footer-explore { padding:10px 15px; min-height:40px; font-size:12px; }
+.r-footer-destinations { margin-top:10px; }
+.r-footer-destinations summary { display:flex; align-items:center; gap:8px; width:fit-content; cursor:pointer; list-style:none; padding:8px 0; font-size:12px; font-weight:600; }
+.r-footer-destinations summary::-webkit-details-marker { display:none; }
+.r-footer-destinations[open] summary svg { transform:rotate(90deg); }
+.r-footer-compact .r-inspiration-tabs { margin:10px 0; gap:6px; }
+.r-footer-compact .r-inspiration-tabs button { padding:8px 12px; font-size:12px; min-height:36px; }
+.r-footer-compact .r-inspiration-links { gap:8px; padding:0 0 8px; }
+.r-design-refresh .r-footer-compact .r-inspiration-links a { padding:10px; min-height:52px; gap:8px; }
+.r-footer-compact .r-footer-columns { padding:20px 0; gap:24px; }
+.r-footer-compact .r-footer-brand .r-brand { font-size:25px; }
+.r-footer-compact .r-footer-brand p { font-size:12px; line-height:1.6; margin:8px 0 0; }
+.r-footer-compact .r-footer-brand > .r-footer-brand-note { display:none; }
+.r-design-refresh .r-footer-compact .r-footer-columns h3 { margin:0 0 8px; font-size:13px; }
+.r-design-refresh .r-footer-compact .r-footer-columns > div > a:not(.r-brand) { display:flex; align-items:center; margin:0; padding:5px 0; min-height:30px; font-size:12px; }
+.r-footer-compact .r-footer-bottom { padding:12px 0; gap:12px; }
+.r-footer-compact :is(.r-footer-legal,.r-footer-legal nav,.r-footer-preferences) { gap:12px; }
+@media(max-width:700px) {
+ .r-footer-compact .r-inspiration { padding:20px 0 12px; }
+ .r-design-refresh .r-footer-compact .r-inspiration h2 { font-size:19px; max-width:190px; }
+ .r-footer-compact .r-footer-explore { padding:9px 11px; gap:6px; white-space:nowrap; }
+ .r-footer-compact .r-footer-columns { gap:18px 20px; padding:18px 0; }
+ .r-footer-compact .r-footer-brand { padding-bottom:14px; display:flex; flex-wrap:wrap; align-items:center; gap:8px 18px; }
+ .r-footer-compact .r-footer-brand p { margin:0; }
+ .r-footer-compact .r-footer-columns > div:last-child { grid-column:1/-1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:20px; }
+ .r-footer-compact .r-footer-columns > div:last-child h3 { grid-column:1/-1; }
+ .r-design-refresh .r-footer-compact .r-footer-columns > div > a:not(.r-brand) { min-height:38px; padding:5px 0; }
+ .r-footer-compact .r-footer-bottom { padding:12px 0 20px; gap:10px; }
+ .r-footer-compact .r-footer-legal { flex-wrap:wrap; gap:10px; }
+ .r-footer-compact .r-footer-preferences { gap:12px; }
+ .r-design-refresh .r-footer-compact { padding-bottom:calc(70px + env(safe-area-inset-bottom,0px)); }
+ .r-bloom-home .r-footer-compact { padding-bottom:0; }
+}
 .r-catalogue-film { display:flex; align-items:center; gap:clamp(24px,4vw,64px); padding:24px; margin:24px 0 30px; background:#fffbea; border:1px solid #ecdfa8; border-radius:16px; }
 .r-catalogue-film .r-catalogue-film-video { display:block; width:180px; max-width:100%; height:auto; max-height:none; aspect-ratio:9/16; object-fit:contain; background:#151515; border-radius:12px; flex-shrink:0; margin:0; }
 .r-catalogue-film-copy { max-width:540px; }

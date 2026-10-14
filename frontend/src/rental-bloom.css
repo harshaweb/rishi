@@ -368,6 +368,10 @@ body:has(.rental-app) { min-width:0; }
 }
 @media(prefers-reduced-motion:reduce) { .r-hero-film-toggle { display:none; } }
 .r-bloom-home .r-mobile-nav { display:none; }
+@media(max-width:600px) {
+ .r-bloom-home .r-city-tabs-only { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; overflow:visible; }
+ .r-bloom-home .r-city-tabs-only button { justify-content:space-between; min-width:0; }
+}
 .r-design-refresh .r-digilocker-panel { background:#fffbea; border:1px solid #ecdfa8; border-radius:12px; padding:18px; margin:18px 0; }
 .r-digilocker-panel > div { display:flex; gap:10px; align-items:center; color:#493b06; }
 .r-digilocker-panel p { font-size:13px; line-height:1.65; color:#5d5540; margin:12px 0; }

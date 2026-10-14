@@ -1025,9 +1025,9 @@ function HomePhotoGallery() {
 }
 
 function HomeFlatCatalogue({ items, loading }: { items: RentalProperty[]; loading: boolean }) {
-  const [city, setCity] = useState("")
-  const cities = rentalCities.filter((name) => items.some((property) => property.city === name))
-  const visible = city ? items.filter((property) => property.city === city) : items
+  const [city, setCity] = useState("Delhi")
+  const cities = ["Delhi", "Gurugram", "Noida", "Ghaziabad"]
+  const visible = items.filter((property) => property.city === city)
   return (
     <section id="all-flats" className="r-flat-catalogue r-hotel-section" aria-labelledby="all-flats-heading">
       <div className="r-section-heading r-hotel-section-heading">
@@ -1037,15 +1037,15 @@ function HomeFlatCatalogue({ items, loading }: { items: RentalProperty[]; loadin
         </div>
         <Link className="r-secondary" to="/search"><SlidersHorizontal size={16} /> More filters</Link>
       </div>
-      <div className="r-flat-city-filters" aria-label="Filter flats by city">
-        {["", ...cities].map((name) => (
+      <div className="r-flat-city-filters r-city-tabs-only" aria-label="Filter flats by city">
+        {cities.map((name) => (
           <button key={name} className={city === name ? "active" : ""} aria-pressed={city === name} onClick={() => setCity(name)}>
-            {name || "All flats"}<span>{name ? items.filter((property) => property.city === name).length : items.length}</span>
+            {name}<span>{items.filter((property) => property.city === name).length}</span>
           </button>
         ))}
       </div>
-      <p className="r-flat-result-count" role="status">Showing {visible.length} {city ? `flats in ${city}` : "flats across Delhi & NCR"}</p>
-      <PropertyCarousel key={city || "all"} items={visible} title={city ? `Flats in ${city}` : "All flats in Delhi & NCR"} />
+      <p className="r-flat-result-count" role="status">Showing {visible.length} flats in {city}</p>
+      <PropertyCarousel key={city} items={visible} title={`Flats in ${city}`} />
     </section>
   )
 }
@@ -1142,22 +1142,6 @@ function HomePage() {
           <>
             {more.error && <ErrorBox message={more.error} retry={more.refresh} />}
             <HomeFlatCatalogue items={all} loading={query.loading || more.loading} />
-            {rentalCities.filter((city) => city !== "Delhi").map((city) => {
-              const cityStays = all.filter((p) => p.city === city)
-              const showNearby = city === "Greater Noida" && !cityStays.length
-              const showFaridabadNearby = city === "Faridabad" && !cityStays.length
-              const nearbyCity = showNearby ? "Noida" : "Gurugram"
-              const showNearbyStays = showNearby || showFaridabadNearby
-              return (
-                <Section
-                  key={city}
-                  title={showNearbyStays ? `Stays near ${city}` : `Popular stays in ${city}`}
-                  subtitle={showNearbyStays ? `Explore nearby flats in ${nearbyCity}. Each listing shows its actual location.` : undefined}
-                  items={showNearbyStays ? all.filter((p) => p.city === nearbyCity) : cityStays}
-                  query={`destination=${encodeURIComponent(showNearbyStays ? nearbyCity : city)}`}
-                />
-              )
-            })}
             <div className="r-escape-banner">
               <img
                 src="/gallery/photo-08.jpg"

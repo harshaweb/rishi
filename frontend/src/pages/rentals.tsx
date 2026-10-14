@@ -43,6 +43,7 @@ import {
   Wind,
   CalendarDays,
   ShieldCheck,
+  CreditCard,
   ArrowUpRight,
   MessageCircle,
   Plus,
@@ -1723,6 +1724,12 @@ function StayPage() {
       setError("Complete DigiLocker verification before requesting this stay.")
       return
     }
+    if (p.bookingMode === "PAYMENT" && !session?.paymentsConfigured) {
+      setError(
+        "Online payment is currently unavailable. Please contact support before booking."
+      )
+      return
+    }
     setBusy(true)
     setError("")
     try {
@@ -2091,6 +2098,54 @@ function StayPage() {
                 }}
               />
             </details>
+            <section
+              className="r-payment-options"
+              aria-labelledby="stay-payment-heading"
+            >
+              <h3 id="stay-payment-heading">Payment method</h3>
+              <div
+                className={`r-payment-method ${p.bookingMode === "HOST_APPROVAL" ? "is-selected" : "is-unavailable"}`}
+              >
+                <Building2 size={21} aria-hidden="true" />
+                <div>
+                  <b>Pay at the property</b>
+                  <p>
+                    {p.bookingMode === "HOST_APPROVAL"
+                      ? "Request your stay now. Pay at the property after host confirmation."
+                      : "This flat requires online payment to confirm."}
+                  </p>
+                </div>
+                {p.bookingMode === "HOST_APPROVAL" && (
+                  <span className="r-payment-badge">Selected</span>
+                )}
+              </div>
+              <div
+                className={`r-payment-method ${p.bookingMode === "PAYMENT" && session?.paymentsConfigured ? "is-selected" : "is-unavailable"}`}
+              >
+                <CreditCard size={21} aria-hidden="true" />
+                <div>
+                  <b>Secure online payment</b>
+                  <p>
+                    {!session
+                      ? "Checking online payment availability…"
+                      : !session.paymentsConfigured
+                        ? "Online payments are not available yet."
+                        : p.bookingMode === "PAYMENT"
+                          ? "Pay through Razorpay. Available methods are shown at checkout."
+                          : "Online payment is not offered for this flat."}
+                  </p>
+                </div>
+                <span className="r-payment-badge">
+                  {p.bookingMode === "PAYMENT" && session?.paymentsConfigured
+                    ? "Selected"
+                    : "Unavailable"}
+                </span>
+              </div>
+              <a className="r-payment-help" href={rentalContact.callUrl}>
+                Questions about payment? Call us{" "}
+                <ArrowUpRight size={14} aria-hidden="true" />
+              </a>
+            </section>
             {(session?.digilockerRequired || session?.digilockerConfigured) && (
               <section
                 className="r-digilocker-panel"
@@ -2172,7 +2227,17 @@ function StayPage() {
             )}
             <button
               className="r-primary r-full"
-              disabled={busy || !checkIn || !checkOut || Boolean(quote && identityNeeded && session?.user)}
+              disabled={
+                busy ||
+                !checkIn ||
+                !checkOut ||
+                Boolean(quote && identityNeeded && session?.user) ||
+                Boolean(
+                  quote &&
+                  p.bookingMode === "PAYMENT" &&
+                  !session?.paymentsConfigured
+                )
+              }
               onClick={quote ? reserve : price}
             >
               {busy

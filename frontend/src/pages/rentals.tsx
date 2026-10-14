@@ -1,6 +1,7 @@
 import { rentalCheckout } from "../lib/rental-checkout"
 import { RentalCalendar } from "../components/rental-calendar"
 import { availableStay, unavailableNight } from "../lib/stay-dates"
+import { newOwnerPhotos } from "../lib/uploaded-photos"
 import {
   useEffect,
   useRef,
@@ -908,7 +909,7 @@ function Section({
     </section>
   )
 }
-const uploadedPhotos = [
+const previousUploadedPhotos = [
   "Wood-panelled bedroom with a balcony entrance",
   "Bedroom with patterned bedding and wooden feature walls",
   "Balcony seating with a small table and plants",
@@ -938,10 +939,11 @@ const uploadedPhotos = [
   src: `/gallery/photo-${String(index + 1).padStart(2, "0")}.jpg`,
   alt,
 }))
+const uploadedPhotos = [...newOwnerPhotos, ...previousUploadedPhotos]
 
 function HomePhotoGallery() {
   const [selected, setSelected] = useState<number | null>(null)
-  const preview = [0, 13, 18, 21, 2]
+  const preview = [5, 2, 7, 1, 9]
   return (
     <section
       className="r-uploaded-gallery"
@@ -1092,7 +1094,7 @@ function HomePage() {
             <a href="#all-flats" className="r-primary">Explore our stays <ArrowUpRight size={18} /></a>
           </div>
           <Link to="/search?destination=Delhi" className="r-bloom-welcome-photo">
-            <img src="/gallery/photo-03.jpg" alt="A balcony with seating and a view of the neighbourhood" loading="lazy" />
+            <img src={newOwnerPhotos[5].src} alt={newOwnerPhotos[5].alt} loading="lazy" />
             <span><b>Omshivraj.</b>Find your corner of Delhi & NCR.<ArrowUpRight size={20} /></span>
           </Link>
         </section>
@@ -1104,9 +1106,9 @@ function HomePage() {
           <p>A little more information. A little less guesswork. Make your next stay your own.</p>
           <div className="r-bloom-benefit-grid">
             {[
-              { image: "/gallery/photo-08.jpg", title: "Find your space", description: "Compare flats, villas, and homes. See the photos, amenities, and guest capacity before you choose." },
-              { image: "/gallery/photo-14.jpg", title: "Plan with clarity", description: "Choose your dates and check availability. Review the total price and cancellation terms before requesting." },
-              { image: "/gallery/photo-22.jpg", title: "Stay connected", description: "Message your host, follow your reservation, and keep your trip details together in your account." },
+              { image: newOwnerPhotos[2].src, title: "Find your space", description: "Compare flats, villas, and homes. See the photos, amenities, and guest capacity before you choose." },
+              { image: newOwnerPhotos[7].src, title: "Plan with clarity", description: "Choose your dates and check availability. Review the total price and cancellation terms before requesting." },
+              { image: newOwnerPhotos[1].src, title: "Stay connected", description: "Message your host, follow your reservation, and keep your trip details together in your account." },
             ].map(({ image, title, description }) => (
               <article key={title}><img src={image} alt={title} loading="lazy" /><h3>{title}</h3><p>{description}</p></article>
             ))}
@@ -1146,8 +1148,8 @@ function HomePage() {
             <HomeFlatCatalogue items={all} loading={query.loading || more.loading} />
             <div className="r-escape-banner">
               <img
-                src="/gallery/photo-08.jpg"
-                alt="A cosy bedroom with a softly lit seating area"
+                src={newOwnerPhotos[3].src}
+                alt={newOwnerPhotos[3].alt}
                 loading="lazy"
               />
               <div>
@@ -1194,8 +1196,8 @@ function HomePage() {
           </div>
           <div className="r-host-art">
             <img
-              src="/gallery/photo-14.jpg"
-              alt="A warm and welcoming living space"
+              src={newOwnerPhotos[6].src}
+              alt={newOwnerPhotos[6].alt}
               loading="lazy"
             />
             <span>

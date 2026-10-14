@@ -1142,7 +1142,7 @@ function HomePage() {
           <>
             {more.error && <ErrorBox message={more.error} retry={more.refresh} />}
             <HomeFlatCatalogue items={all} loading={query.loading || more.loading} />
-            {rentalCities.map((city) => {
+            {rentalCities.filter((city) => city !== "Delhi").map((city) => {
               const cityStays = all.filter((p) => p.city === city)
               const showNearby = city === "Greater Noida" && !cityStays.length
               const showFaridabadNearby = city === "Faridabad" && !cityStays.length

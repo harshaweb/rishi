@@ -1,5 +1,6 @@
 import { rentalCheckout } from "../lib/rental-checkout"
 import { RentalCalendar } from "../components/rental-calendar"
+import { availableStay, unavailableNight } from "../lib/stay-dates"
 import {
   useEffect,
   useRef,
@@ -1661,6 +1662,26 @@ function StayPage() {
     [report, setReport] = useState(false),
     [reportBody, setReportBody] = useState("")
   const bookingKey = useRef("")
+  const [dateField, setDateField] = useState<"checkIn" | "checkOut">("checkIn")
+  const blockedDates = query.data?.blocked || []
+  function chooseArrival(date: string) {
+    clearQuote()
+    if (date && (date < today() || unavailableNight(date, blockedDates))) {
+      setError("This check-in date is unavailable. Choose another date.")
+      return
+    }
+    setCheckIn(date)
+    if (!date || !availableStay(date, checkOut, blockedDates)) setCheckOut("")
+    setDateField(date ? "checkOut" : "checkIn")
+  }
+  function chooseDeparture(date: string) {
+    clearQuote()
+    if (date && !availableStay(checkIn, date, blockedDates)) {
+      setError("Choose checkout after check-in, within 90 nights, without unavailable nights.")
+      return
+    }
+    setCheckOut(date)
+  }
   async function verifyIdentity() {
     setBusy(true)
     setError("")
@@ -1696,6 +1717,10 @@ function StayPage() {
   }
   async function price() {
     if (!p) return
+    if (!availableStay(checkIn, checkOut, blockedDates) || checkIn < today()) {
+      setError("Choose available check-in and checkout dates for a stay of 1–90 nights.")
+      return
+    }
     setBusy(true)
     setError("")
     try {
@@ -1999,11 +2024,13 @@ function StayPage() {
             </div>
             <RentalCalendar
               selected={checkIn}
-              blocked={query.data?.blocked || []}
+              checkout={checkOut}
+              choosing={dateField}
+              chooseField={setDateField}
+              blocked={blockedDates}
               choose={(d) => {
-                setCheckIn(d)
-                setCheckOut(nextDate(d, 2))
-                clearQuote()
+                if (dateField === "checkIn") chooseArrival(d)
+                else chooseDeparture(d)
               }}
             />
             <p>
@@ -2049,10 +2076,7 @@ function StayPage() {
                   type="date"
                   min={today()}
                   value={checkIn}
-                  onChange={(e) => {
-                    setCheckIn(e.target.value)
-                    clearQuote()
-                  }}
+                  onChange={(e) => chooseArrival(e.target.value)}
                 />
               </label>
               <label>
@@ -2061,11 +2085,10 @@ function StayPage() {
                   aria-label="Booking checkout"
                   type="date"
                   min={checkIn ? nextDate(checkIn) : nextDate(today())}
+                  max={checkIn ? nextDate(checkIn, 90) : undefined}
+                  disabled={!checkIn}
                   value={checkOut}
-                  onChange={(e) => {
-                    setCheckOut(e.target.value)
-                    clearQuote()
-                  }}
+                  onChange={(e) => chooseDeparture(e.target.value)}
                 />
               </label>
               <label className="r-booking-guests">
@@ -2086,6 +2109,9 @@ function StayPage() {
                 </select>
               </label>
             </div>
+            <a className="r-available-dates-link" href="#stay-dates" onClick={() => setDateField(checkIn && !checkOut ? "checkOut" : "checkIn")}>
+              <CalendarDays size={16} aria-hidden="true" /> View available dates
+            </a>
             <details className="r-promo">
               <summary>Have a promotion code?</summary>
               <input

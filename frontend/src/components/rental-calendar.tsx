@@ -1,12 +1,19 @@
 import { useState } from "react"
+import { availableStay, unavailableNight } from "../lib/stay-dates"
 export function RentalCalendar({
   blocked,
   choose,
   selected,
+  checkout,
+  choosing = "checkIn",
+  chooseField,
 }: {
   blocked: { start: string; end: string }[]
   choose: (date: string) => void
   selected?: string
+  checkout?: string
+  choosing?: "checkIn" | "checkOut"
+  chooseField?: (field: "checkIn" | "checkOut") => void
 }) {
   const [offset, setOffset] = useState(0),
     now = new Date(),
@@ -17,6 +24,14 @@ export function RentalCalendar({
   const today = now.toISOString().slice(0, 10)
   return (
     <div className="r-calendar">
+      {chooseField && <div className="r-date-picker-tabs" role="group" aria-label="Choose booking dates">
+        <button type="button" aria-pressed={choosing === "checkIn"} onClick={() => chooseField("checkIn")}>
+          Check-in <b>{selected || "Select date"}</b>
+        </button>
+        <button type="button" aria-pressed={choosing === "checkOut"} disabled={!selected} onClick={() => chooseField("checkOut")}>
+          Check-out <b>{checkout || "Select date"}</b>
+        </button>
+      </div>}
       <div className="r-section-heading">
         <button
           className="r-secondary"
@@ -54,16 +69,16 @@ export function RentalCalendar({
             )
               .toISOString()
               .slice(0, 10),
-            unavailable = blocked.some(
-              (b) => date >= b.start.slice(0, 10) && date < b.end.slice(0, 10)
-            )
+            unavailable = choosing === "checkOut" && selected
+              ? !availableStay(selected, date, blocked)
+              : unavailableNight(date, blocked)
           return (
             <button
               key={date}
               disabled={date < today || unavailable}
-              aria-label={`${date}${unavailable ? " unavailable" : ""}`}
-              aria-pressed={selected === date}
-              className={selected === date ? "is-selected" : undefined}
+              aria-label={`${date}${date < today || unavailable ? " unavailable" : ` ${choosing === "checkOut" ? "check-out" : "check-in"}`}`}
+              aria-pressed={selected === date || checkout === date}
+              className={selected === date || checkout === date ? "is-selected" : selected && checkout && date > selected && date < checkout ? "is-in-range" : undefined}
               onClick={() => choose(date)}
             >
               {i + 1}
@@ -71,9 +86,9 @@ export function RentalCalendar({
           )
         })}
       </div>
-      <p className="r-muted r-small">
-        Unavailable nights are disabled. Select an available arrival day;
-        checkout and final availability are checked in your booking form.
+      <p className="r-muted r-small" role="status">
+        {choosing === "checkOut" ? "Choose your checkout date. Stays can be 1–90 nights and cannot cross unavailable nights." : "Choose an available check-in date, then select checkout."}
+        {" "}Unavailable dates are disabled. Availability is checked again before booking.
       </p>
     </div>
   )

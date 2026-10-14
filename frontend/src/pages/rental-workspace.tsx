@@ -27,6 +27,7 @@ import { rentalContact } from "../../../server/shared/rental-contact"
 import { ApiError } from "../lib/api"
 import {
   LayoutDashboard,
+  Plus,
   Users,
   House,
   CalendarDays,
@@ -1228,9 +1229,10 @@ function Calendar() {
     >("/host/calendar"),
     listings = useRentalResource<RentalProperty[]>("/host/listings"),
     reservations = useRentalResource<RentalBooking[]>("/host/reservations"),
-    { notify } = useRental()
+    { notify, session } = useRental()
   return (
     <>
+      {session?.user?.role === "ADMIN" && <Link to="/admin/listings">← Back to admin properties</Link>}
       <div className="r-panel">
         <h2>Block dates</h2>
         <p>End date is exclusive. Existing reservations cannot be blocked.</p>
@@ -1253,7 +1255,7 @@ function Calendar() {
             <select name="propertyId" required>
               {listings.data?.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.title}
+                  {p.title} · {p.city}
                 </option>
               ))}
             </select>
@@ -1592,8 +1594,7 @@ function Admin() {
   }
   async function act(path: string, data: unknown, method = "POST") {
     await rentalRequest(path, data, method)
-    q.refresh()
-    overview.refresh()
+    refresh()
     setSelected(null)
     notify("Changes saved to the database.")
   }
@@ -1685,6 +1686,10 @@ function Admin() {
             </p>
           </div>
           <div className="r-hosting-header-actions">
+            {entity === "listings" && <>
+              <Link className="r-secondary" to="/host/calendar">Manage availability</Link>
+              <Link className="r-hosting-primary" to="/host/listings/new">Add flat <Plus size={16} /></Link>
+            </>}
             {entity === "overview" && (
               <Link className="r-hosting-primary" to="/admin/listings">
                 Manage listings <ArrowUpRight size={16} />
@@ -2332,6 +2337,12 @@ function Admin() {
                   </button>
                 </>
               )}
+              {entity === "bookings" &&
+                selected.status === "PENDING" && selected.bookingMode === "HOST_APPROVAL" && (
+                  <Form label="Confirm reservation" submit={async () => act(`/host/reservations/${selected.id}/accept`, {})}>
+                    <p>Confirm this request and reserve its dates. The guest will pay at the property.</p>
+                  </Form>
+                )}
               {entity === "bookings" &&
                 ["PENDING", "CONFIRMED"].includes(String(selected.status)) && (
                   <Form

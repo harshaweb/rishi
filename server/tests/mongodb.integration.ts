@@ -365,6 +365,9 @@ try {
   equal(blocked.status, 201, "Create host calendar block")
   const calendar = await host.agent.get("/api/rental/host/calendar")
   equal(calendar.body.length, 1, "Host calendar lists block")
+  equal((await admin.agent.get("/api/rental/host/calendar")).body.length, 1, "Admin calendar includes another host's blocked dates")
+  equal((await guest.agent.get("/api/rental/host/calendar")).status, 403, "Guest cannot access availability management")
+  equal((await admin.agent.get("/api/rental/host/listings")).body.some((p: Document) => p.id === propertyId), true, "Admin listing picker includes another host's property")
   equal(
     (await send(guest, "post", "/bookings", booking(30))).status,
     409,
@@ -387,6 +390,16 @@ try {
     "CANCELLED",
     "Expired booking state persisted"
   )
+  const adminRequest = await send(guest, "post", "/bookings", booking(80))
+  equal(adminRequest.status, 201, "Create request for admin confirmation")
+  equal((await send(guest, "post", `/host/reservations/${adminRequest.body.id}/accept`)).status, 403, "Guest cannot confirm a reservation")
+  equal((await send(admin, "post", `/host/reservations/${adminRequest.body.id}/accept`)).status, 200, "Admin confirms another host's reservation")
+  equal((await c("Booking").findOne({ id: adminRequest.body.id }))?.paymentStatus, "PAY_AT_PROPERTY", "Admin confirmation cannot mark an unpaid stay as paid")
+  equal(await c("Audit").countDocuments({ action: "ADMIN_CONFIRMED", entityId: adminRequest.body.id }), 1, "Admin confirmation records its actor in audit")
+  equal((await admin.agent.get("/api/rental/host/reservations")).body.some((b: Document) => b.id === adminRequest.body.id), true, "Admin availability includes another host's reservations")
+  equal((await send(admin, "post", `/bookings/${adminRequest.body.id}/cancel`)).status, 200, "Admin cancels another host's reservation")
+  equal(await available(propertyId, date(80), date(82)), true, "Admin cancellation releases reserved dates")
+  equal((await send(admin, "post", `/host/reservations/${adminRequest.body.id}/accept`)).status, 409, "Admin cannot revive a cancelled reservation")
   const list = await send(guest, "post", "/wishlists", { name: "Weekend" })
   equal(list.status, 201, "Create wishlist")
   equal(

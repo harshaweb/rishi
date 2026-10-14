@@ -1026,7 +1026,7 @@ async function validCategory(category: string, session?: ClientSession) {
 }
 r.get(
   "/host/listings",
-  wrap(async (req, res) => res.json(await properties({ hostId: uid(req) })))
+  wrap(async (req, res) => res.json(await properties(req.rentalUser!.role === "ADMIN" ? {} : { hostId: uid(req) })))
 )
 r.get(
   "/host/listings/:id",
@@ -1266,7 +1266,7 @@ r.get(
   "/host/calendar",
   wrap(async (req, res) => {
     const ps = await c("Property")
-      .find({ hostId: uid(req) })
+      .find(req.rentalUser!.role === "ADMIN" ? {} : { hostId: uid(req) })
       .toArray()
     const rows = await c("BlockedDate")
       .find({ propertyId: { $in: ps.map((p) => p.id) } })
@@ -1322,7 +1322,7 @@ r.delete(
   })
 )
 async function ownBookings(req: Request) {
-  const ids = await c("Property").distinct("id", { hostId: uid(req) })
+  const ids = await c("Property").distinct("id", req.rentalUser!.role === "ADMIN" ? {} : { hostId: uid(req) })
   return bookingRows({ propertyId: { $in: ids } })
 }
 r.get(
@@ -1342,7 +1342,7 @@ r.post(
       )
       if (!initial) throw fail(404, "Reservation not found.")
       const p = await lockProperty(initial.propertyId, session)
-      if (p.hostId !== uid(req)) throw fail(404, "Reservation not found.")
+      if (p.hostId !== uid(req) && req.rentalUser!.role !== "ADMIN") throw fail(404, "Reservation not found.")
       await expire(p.id!, session)
       const b = (await c("Booking").findOne(
         { id: initial.id },
@@ -1366,7 +1366,7 @@ r.post(
         },
         options(session)
       )
-      await audit(uid(req), "HOST_CONFIRMED", b.id!, session)
+      await audit(uid(req), req.rentalUser!.role === "ADMIN" ? "ADMIN_CONFIRMED" : "HOST_CONFIRMED", b.id!, session)
       return b
     })
     await notify(

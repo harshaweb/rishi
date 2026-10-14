@@ -268,6 +268,10 @@ try {
   )
   const key = randomUUID(),
     payload = booking(10, key)
+  equal((await send(guest, "post", "/bookings", { ...booking(6), expectedTotal: 1 })).status, 409, "Changed booking price requires a new guest review")
+  equal(await available(propertyId, date(6), date(8)), true, "Price mismatch creates no inventory hold")
+  const acceptedQuote = await send(guest, "post", `/properties/${propertyId}/quote`, payload)
+  Object.assign(payload, { expectedTotal: acceptedQuote.body.total })
   const first = await send(guest, "post", "/bookings", payload)
   equal(first.status, 201, "Create booking transaction")
   equal(

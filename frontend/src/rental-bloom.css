@@ -401,6 +401,13 @@ body:has(.rental-app) { min-width:0; }
   margin: 20px 0;
   min-width: 0;
 }
+.r-booking-review h3 { margin:0 0 6px; font-size:22px; }
+.r-booking-review > p { line-height:1.65; color:#625b4b; font-size:14px; }
+.r-booking-review .r-record { margin:20px 0; }
+.r-booking-review .r-record > div { display:flex; justify-content:space-between; gap:20px; padding:9px 0; border-bottom:1px solid #eee; }
+.r-booking-review .r-record dd { text-align:right; margin:0; }
+.r-booking-review .r-record dt { color:#6b655b; }
+.r-booking-review .r-text-button { margin-top:12px; width:100%; }
 .r-payment-options h3 {
   margin: 0 0 12px;
   font-size: 15px;

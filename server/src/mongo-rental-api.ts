@@ -495,6 +495,7 @@ r.post(
       .extend({
         propertyId: z.string().uuid(),
         idempotencyKey: z.string().uuid(),
+        expectedTotal: z.number().int().min(0).optional(),
       })
       .parse(req.body)
     if (!req.rentalUser!.verified)
@@ -535,6 +536,8 @@ r.post(
           "Online payments are not configured for this stay. No booking or charge was made."
         )
       const price = await quote(p, d.checkIn, d.checkOut, d.coupon, session)
+      if (d.expectedTotal !== undefined && d.expectedTotal !== price.total)
+        throw fail(409, "The price has changed. Check availability again to review the updated total. No booking was created.")
       await expire(p.id, session)
       if (!(await available(p.id, d.checkIn, d.checkOut, session)))
         throw fail(409, "Those dates are no longer available.")

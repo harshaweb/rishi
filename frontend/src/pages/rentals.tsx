@@ -2,6 +2,7 @@ import { rentalCheckout } from "../lib/rental-checkout"
 import { RentalCalendar } from "../components/rental-calendar"
 import { availableStay, unavailableNight } from "../lib/stay-dates"
 import { newOwnerPhotos } from "../lib/uploaded-photos"
+import { ApiError } from "../lib/api"
 import {
   useEffect,
   useRef,
@@ -1619,7 +1620,7 @@ function identityBookingDraft(slug: string) {
 function StayPage() {
   const slug = useLocation().pathname.split("/")[2],
     navigate = useNavigate(),
-    { session, notify, saved, toggleSaved } = useRental()
+    { session, notify, saved, toggleSaved, refreshSession } = useRental()
   const { content } = useContent()
   const query = useRentalResource<
     RentalProperty & {
@@ -1665,6 +1666,10 @@ function StayPage() {
     [report, setReport] = useState(false),
     [reportBody, setReportBody] = useState("")
   const bookingKey = useRef("")
+  const quoteVersion = useRef(0)
+  const [reviewBooking, setReviewBooking] = useState(false)
+  const [verificationNotice, setVerificationNotice] = useState("")
+  const [bookingAttempted, setBookingAttempted] = useState(false)
   const [dateField, setDateField] = useState<"checkIn" | "checkOut">("checkIn")
   const blockedDates = query.data?.blocked || []
   function chooseArrival(date: string) {
@@ -1710,6 +1715,9 @@ function StayPage() {
     }
   }
   function clearQuote() {
+    quoteVersion.current++
+    setReviewBooking(false)
+    setBookingAttempted(false)
     setQuote(null)
     setError("")
     bookingKey.current = ""
@@ -1722,14 +1730,15 @@ function StayPage() {
     }
     setBusy(true)
     setError("")
+    const version = ++quoteVersion.current
     try {
       const q = await rentalRequest<Record<string, number>>(
         `/properties/${p.id}/quote`,
         { checkIn, checkOut, guests, coupon }
       )
-      setQuote(q)
+      if (version === quoteVersion.current) setQuote(q)
     } catch (e) {
-      setError((e as Error).message)
+      if (version === quoteVersion.current) setError((e as Error).message)
     } finally {
       setBusy(false)
     }
@@ -1743,6 +1752,10 @@ function StayPage() {
     }
     if (!quote) {
       await price()
+      return
+    }
+    if (!session.user.verified) {
+      setError("Verify your email before requesting a stay.")
       return
     }
     if (identityNeeded) {
@@ -1759,6 +1772,7 @@ function StayPage() {
     setError("")
     try {
       bookingKey.current ||= crypto.randomUUID()
+      setBookingAttempted(true)
       const booking = await rentalRequest<RentalBooking>("/bookings", {
         propertyId: p.id,
         checkIn,
@@ -1766,6 +1780,7 @@ function StayPage() {
         guests,
         coupon,
         idempotencyKey: bookingKey.current,
+        expectedTotal: quote.total,
       })
       try {
         sessionStorage.removeItem(`omshivraj-digilocker:${slug}`)
@@ -1780,6 +1795,9 @@ function StayPage() {
       }
       navigate("/trips")
     } catch (e) {
+      setReviewBooking(false)
+      quoteVersion.current++
+      if (e instanceof ApiError && e.status === 409) setQuote(null)
       setError((e as Error).message)
     } finally {
       setBusy(false)
@@ -2131,6 +2149,28 @@ function StayPage() {
                 }}
               />
             </details>
+            {session?.user && !session.user.verified && <section className="r-digilocker-panel" aria-label="Email verification required">
+              <b>Verify your email to book</b>
+              <p>{session.emailConfigured ? "Open the verification email in your inbox, then refresh your verification status here." : "Verification email delivery is currently unavailable. Please contact support before booking."}</p>
+              {session.emailConfigured && <button type="button" className="r-secondary r-full" disabled={busy} onClick={async () => {
+                setBusy(true)
+                try {
+                  const result = await rentalRequest<{ emailStatus: string }>("/resend-verification")
+                  setVerificationNotice(result.emailStatus === "PROVIDER_ACCEPTED"
+                    ? "Verification email sent. Please check your inbox."
+                    : "The verification email could not be sent. Please contact support.")
+                }
+                catch (e) { setVerificationNotice((e as Error).message) }
+                finally { setBusy(false) }
+              }}>Send verification email</button>}
+              <button type="button" className="r-text-button" disabled={busy} onClick={async () => {
+                setBusy(true)
+                try { await refreshSession(); setVerificationNotice("Verification status refreshed.") }
+                catch (e) { setVerificationNotice((e as Error).message) }
+                finally { setBusy(false) }
+              }}>I’ve verified my email — refresh</button>
+              {verificationNotice && <p role="status">{verificationNotice}</p>}
+            </section>}
             <section
               className="r-payment-options"
               aria-labelledby="stay-payment-heading"
@@ -2256,6 +2296,7 @@ function StayPage() {
             {error && (
               <p role="alert" className="r-error">
                 {error}
+                {bookingAttempted && <> <Link to="/trips">Check your trips before submitting another request.</Link></>}
               </p>
             )}
             <button
@@ -2271,7 +2312,10 @@ function StayPage() {
                   !session?.paymentsConfigured
                 )
               }
-              onClick={quote ? reserve : price}
+              onClick={quote ? () => {
+                if (!session?.user || !session.user.verified) void reserve()
+                else setReviewBooking(true)
+              } : price}
             >
               {busy
                 ? "Checking…"
@@ -2342,6 +2386,27 @@ function StayPage() {
           </button>
         </aside>
       </div>
+      {reviewBooking && quote && <RentalDialog title="Review your booking" close={() => { if (!busy) setReviewBooking(false) }}>
+        <div className="r-booking-review">
+          <h3>{p.title}</h3><p>{p.city} · {p.type}</p>
+          <dl className="r-record">
+            <div><dt>Check-in</dt><dd>{rentalDate(checkIn)} · after {p.checkInTime}</dd></div>
+            <div><dt>Checkout</dt><dd>{rentalDate(checkOut)} · before {p.checkOutTime}</dd></div>
+            <div><dt>Guests</dt><dd>{guests}</dd></div>
+            <div><dt>{quote.nights} nights</dt><dd>{money(quote.nightlySubtotal)}</dd></div>
+            <div><dt>Cleaning fee</dt><dd>{money(quote.cleaningFee)}</dd></div>
+            <div><dt>Service fee</dt><dd>{money(quote.platformFee)}</dd></div>
+            <div><dt>Taxes</dt><dd>{money(quote.tax)}</dd></div>
+            {quote.discount > 0 && <div><dt>Promotion discount</dt><dd>−{money(quote.discount)}</dd></div>}
+            <div><dt>Total · INR</dt><dd><strong>{money(quote.total)}</strong></dd></div>
+            <div><dt>Cancellation policy</dt><dd>{p.cancellation.toLowerCase()} · <Link to="/cancellation-policy" target="_blank" rel="noopener noreferrer">Read cancellation terms</Link></dd></div>
+          </dl>
+          <p>{p.bookingMode === "HOST_APPROVAL" ? "This is a booking request. Your host or an administrator must confirm it within 48 hours. Payment is due at the property after confirmation." : "Your dates are held for 20 minutes. Complete Razorpay payment to confirm your booking."}</p>
+          <p>Availability and the total price are checked again when you confirm.</p>
+          <button className="r-primary r-full" disabled={busy} onClick={reserve}>{busy ? "Saving your request…" : p.bookingMode === "HOST_APPROVAL" ? "Confirm booking request" : "Continue to secure payment"}</button>
+          <button className="r-text-button" disabled={busy} onClick={() => setReviewBooking(false)}>Back to dates</button>
+        </div>
+      </RentalDialog>}
       <div className="r-mobile-booking" aria-label="Stay booking shortcut">
         <div>
           <b>{money(p.nightlyRate)}</b>
@@ -2776,7 +2841,7 @@ function RentalSite() {
         ) : pathname === "/search" ? (
           <SearchPage />
         ) : pathname.startsWith("/stays/") ? (
-          <StayPage />
+          <StayPage key={pathname} />
         ) : workspace ? (
           <RentalWorkspace />
         ) : (

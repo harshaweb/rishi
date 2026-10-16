@@ -87,8 +87,9 @@ export function RentalCalendar({
         })}
       </div>
       <p className="r-muted r-small" role="status">
-        {choosing === "checkOut" ? "Choose your checkout date. Stays can be 1–90 nights and cannot cross unavailable nights." : "Choose an available check-in date, then select checkout."}
-        {" "}Unavailable dates are disabled. Availability is checked again before booking.
+        {choosing === "checkOut"
+          ? "Choose checkout within 90 nights. Unavailable dates can’t be selected."
+          : "Choose check-in, then checkout. Unavailable dates can’t be selected."}
       </p>
     </div>
   )

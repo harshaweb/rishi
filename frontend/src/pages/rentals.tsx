@@ -45,6 +45,7 @@ import {
   Car,
   Wind,
   CalendarDays,
+  Clock3,
   ShieldCheck,
   CreditCard,
   ArrowUpRight,
@@ -91,6 +92,10 @@ const icons = [
 const today = () => new Date().toISOString().slice(0, 10)
 const nextDate = (date: string, days = 1) =>
   new Date(Date.parse(date) + days * 86400000).toISOString().slice(0, 10)
+const rentalTime = (value: string) => {
+  const [hours, minutes] = value.split(":").map(Number)
+  return `${hours % 12 || 12}:${String(minutes).padStart(2, "0")} ${hours < 12 ? "AM" : "PM"}`
+}
 export const rentalPaths = [
   "/",
   "/search",
@@ -326,8 +331,8 @@ function SearchBar({ compact = false }: { compact?: boolean }) {
             </>
           ) : panel === "dates" ? (
             <>
-              <div className="r-date-fields">
-                <label className="r-input-label">
+              <div className="r-date-fields r-search-date-fields">
+                <label className="r-input-label r-search-date-field">
                   Check in
                   <input
                     aria-label="Search check-in"
@@ -341,7 +346,7 @@ function SearchBar({ compact = false }: { compact?: boolean }) {
                     }}
                   />
                 </label>
-                <label className="r-input-label">
+                <label className="r-input-label r-search-date-field">
                   Check out
                   <input
                     aria-label="Search check-out"
@@ -472,6 +477,7 @@ function Counter({
       </div>
       <div>
         <button
+          type="button"
           aria-label={`Remove ${name.toLowerCase()}`}
           disabled={value <= min}
           onClick={() => set(value - 1)}
@@ -480,6 +486,7 @@ function Counter({
         </button>
         <span aria-live="polite">{value}</span>
         <button
+          type="button"
           aria-label={`Add ${name.toLowerCase()}`}
           disabled={value >= max}
           onClick={() => set(value + 1)}
@@ -694,14 +701,14 @@ function Header() {
     </header>
   )
 }
-export function RentalCard({ property: p }: { property: RentalProperty }) {
+export function RentalCard({ property: p, bookingQuery = "" }: { property: RentalProperty; bookingQuery?: string }) {
   const { saved, toggleSaved } = useRental()
   const [image, setImage] = useState(0),
     [busy, setBusy] = useState(false)
   return (
     <article className="r-card">
       <div className="r-card-photo">
-        <Link to={`/stays/${p.slug}`} aria-label={`${p.title} in ${p.city}`}>
+        <Link to={`/stays/${p.slug}${bookingQuery ? `?${bookingQuery}` : ""}`} aria-label={`${p.title} in ${p.city}`}>
           <img
             src={p.images[image] || "/gallery/photo-01.jpg"}
             alt={`${p.type} in ${p.city}: ${p.title}`}
@@ -755,7 +762,7 @@ export function RentalCard({ property: p }: { property: RentalProperty }) {
           </>
         )}
       </div>
-      <Link to={`/stays/${p.slug}`} className="r-card-description">
+      <Link to={`/stays/${p.slug}${bookingQuery ? `?${bookingQuery}` : ""}`} className="r-card-description">
         <div>
           <h3>{p.title}</h3>
           {p.reviewCount > 0 && <span className="r-rating">
@@ -1073,6 +1080,15 @@ function HomePage() {
   const all = Array.from(new Map([...items, ...(more.data?.items || [])].map((property) => [property.id, property])).values())
   const [category, setCategory] = useState("")
   const [heroPaused, setHeroPaused] = useState(false)
+  const [destination, setDestination] = useState("")
+  const [checkIn, setCheckIn] = useState("")
+  const [checkOut, setCheckOut] = useState("")
+  const [adults, setAdults] = useState(1)
+  const [children, setChildren] = useState(0)
+  const [infants, setInfants] = useState(0)
+  const [pets, setPets] = useState(0)
+  const [guestPickerOpen, setGuestPickerOpen] = useState(false)
+  const [searchError, setSearchError] = useState("")
   const navigate = useNavigate()
   return (
     <>
@@ -1082,18 +1098,74 @@ function HomePage() {
           <div className="r-home-hero-content">
             <h1>Your next stay.<br />Hello, Omshivraj.</h1>
             <p>Explore flats and homes across Delhi & NCR. Choose your dates, find the right space, and request your stay.</p>
-            <form className="r-bloom-hero-search" action="/search" method="get" onSubmit={(event) => {
+            <form className="r-bloom-hero-search" onSubmit={(event) => {
               event.preventDefault()
-              const destination = String(new FormData(event.currentTarget).get("destination") || "")
-              navigate(destination ? `/search?destination=${encodeURIComponent(destination)}` : "/search")
+              if (Boolean(checkIn) !== Boolean(checkOut) || (checkIn && (checkOut <= checkIn || Date.parse(checkOut) - Date.parse(checkIn) > 90 * 86400000))) {
+                setSearchError("Choose a checkout date 1–90 nights after check-in.")
+                return
+              }
+              const params = new URLSearchParams()
+              if (destination) params.set("destination", destination)
+              if (checkIn) {
+                params.set("checkIn", checkIn)
+                params.set("checkOut", checkOut)
+              }
+              params.set("guests", String(adults + children))
+              params.set("adults", String(adults))
+              params.set("children", String(children))
+              params.set("infants", String(infants))
+              params.set("pets", String(pets))
+              if (pets) params.set("amenities", "Pets allowed")
+              navigate(`/search?${params}`)
             }}>
-              <Search size={20} aria-hidden="true" />
-              <select name="destination" aria-label="Choose your destination" defaultValue="">
+              <label className="r-bloom-search-destination">
+                <span>DESTINATION</span>
+                <select name="destination" aria-label="Choose your destination" value={destination} onChange={(event) => setDestination(event.target.value)}>
                 <option value="">Book a stay in Delhi & NCR</option>
                 {rentalCities.map((city) => <option key={city} value={city}>{city}</option>)}
-              </select>
-              <button type="submit" aria-label="Search stays"><ArrowUpRight size={21} /></button>
+                </select>
+              </label>
+              <label>
+                <span>CHECK-IN</span>
+                <input aria-label="Home search check-in" type="date" min={today()} value={checkIn} onChange={(event) => {
+                  const date = event.target.value
+                  setCheckIn(date)
+                  if (date && checkOut <= date) setCheckOut(nextDate(date))
+                  setSearchError("")
+                }} />
+              </label>
+              <label>
+                <span>CHECKOUT</span>
+                <input aria-label="Home search checkout" type="date" min={checkIn ? nextDate(checkIn) : nextDate(today())} max={checkIn ? nextDate(checkIn, 90) : undefined} value={checkOut} onChange={(event) => {
+                  setCheckOut(event.target.value)
+                  setSearchError("")
+                }} />
+              </label>
+              <button
+                type="button"
+                className="r-bloom-search-guests"
+                aria-expanded={guestPickerOpen}
+                aria-haspopup="dialog"
+                onClick={() => setGuestPickerOpen((open) => !open)}
+              >
+                <span>GUESTS</span>
+                <strong>{adults + children} guests{pets ? ` · ${pets} pet${pets > 1 ? "s" : ""}` : ""}</strong>
+              </button>
+              <button type="submit" aria-label="Search stays"><Search size={19} /><span>Search</span></button>
+              {guestPickerOpen && (
+                <div className="r-bloom-guest-picker" role="dialog" aria-label="Choose guests and pets">
+                  <Counter name="Adults" description="Ages 13 or above" value={adults} min={1} max={20} set={setAdults} />
+                  <Counter name="Children" description="Ages 2–12" value={children} min={0} max={10} set={setChildren} />
+                  <Counter name="Infants" description="Under 2" value={infants} min={0} max={5} set={setInfants} />
+                  <Counter name="Pets" description="Filter for pet-friendly stays" value={pets} min={0} max={2} set={setPets} />
+                  <div className="r-bloom-guest-picker-actions">
+                    <button type="button" onClick={() => { setAdults(1); setChildren(0); setInfants(0); setPets(0) }}>Reset</button>
+                    <button type="button" onClick={() => setGuestPickerOpen(false)}>Done</button>
+                  </div>
+                </div>
+              )}
             </form>
+            {searchError && <p className="r-bloom-search-error" role="alert">{searchError}</p>}
             <span className="r-bloom-direct"><ShieldCheck size={16} /> Direct requests. Host-confirmed stays.</span>
           </div>
           <button className="r-hero-film-toggle" type="button" onClick={() => setHeroPaused((value) => !value)} aria-pressed={heroPaused}>{heroPaused ? "Play video" : "Pause video"}</button>
@@ -1301,6 +1373,10 @@ function SearchPage() {
     setFilter(false)
   }
   const items = query.data?.items || []
+  const bookingParams = new URLSearchParams()
+  for (const key of ["checkIn", "checkOut", "guests"])
+    if (params.has(key)) bookingParams.set(key, params.get(key)!)
+  const bookingQuery = bookingParams.toString()
   return (
     <div className="r-container r-search-page">
       <div className="r-results-head">
@@ -1397,7 +1473,7 @@ function SearchPage() {
         <div className={map ? "r-map-layout" : ""}>
           <div className="r-card-grid">
             {items.map((p) => (
-              <RentalCard key={p.id} property={p} />
+              <RentalCard key={p.id} property={p} bookingQuery={bookingQuery} />
             ))}
           </div>
           {map && (
@@ -1603,12 +1679,18 @@ function SearchPage() {
 
 function identityBookingDraft(slug: string) {
   const empty = { checkIn: "", checkOut: "", guests: 1, coupon: "" }
-  if (
-    typeof window === "undefined" ||
-    (!new URLSearchParams(window.location.search).has("digilocker") &&
-      new URLSearchParams(window.location.search).get("booking") !== "resume")
-  )
-    return empty
+  if (typeof window === "undefined") return empty
+  const params = new URLSearchParams(window.location.search)
+  const resume = params.has("digilocker") || params.get("booking") === "resume"
+  if (!resume) {
+    const guests = Number(params.get("guests") || 1)
+    return {
+      checkIn: params.get("checkIn") || "",
+      checkOut: params.get("checkOut") || "",
+      guests: Number.isInteger(guests) && guests > 0 && guests <= 30 ? guests : 1,
+      coupon: "",
+    }
+  }
   try {
     const value = JSON.parse(
       sessionStorage.getItem(`omshivraj-digilocker:${slug}`) || "null"
@@ -2041,20 +2123,21 @@ function StayPage() {
           <section id="stay-dates" className="r-stay-dates">
             <span className="r-stay-eyebrow">PLAN YOUR TIME AWAY</span>
             <h2>Make time for a getaway</h2>
-            <div className="r-stay-date-summary">
-              <CalendarDays size={20} aria-hidden="true" />
-              <div>
-                <b>
-                  {checkIn ? rentalDate(checkIn) : "Choose your arrival"}
-                  {checkOut ? ` — ${rentalDate(checkOut)}` : ""}
-                </b>
-                <span>
-                  {checkIn
-                    ? "Your selected dates · confirm availability below"
-                    : "Select a day to start planning your stay"}
-                </span>
+            {(checkIn || checkOut) && (
+              <div className="r-stay-date-summary">
+                <CalendarDays size={20} aria-hidden="true" />
+                <div>
+                  <b>
+                    {checkIn ? rentalDate(checkIn) : "Choose check-in"}
+                    {checkOut ? ` — ${rentalDate(checkOut)}` : ""}
+                  </b>
+                  <span>
+                    {checkIn && `Check-in after ${rentalTime(p.checkInTime)}`}
+                    {checkOut && ` · Checkout by ${rentalTime(p.checkOutTime)}`}
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
             <RentalCalendar
               selected={checkIn}
               checkout={checkOut}
@@ -2066,9 +2149,8 @@ function StayPage() {
                 else chooseDeparture(d)
               }}
             />
-            <p>
-              Select your dates to check live availability and see a full price
-              breakdown.
+            <p className="r-calendar-help">
+              Choose dates, then check availability for the total price.
             </p>
             {query.data?.blocked?.length ? (
               <details>
@@ -2079,12 +2161,7 @@ function StayPage() {
                   </p>
                 ))}
               </details>
-            ) : (
-              <p className="r-muted">
-                No blocked dates are currently listed. Availability is checked
-                when you request.
-              </p>
-            )}
+            ) : null}
           </section>
         </div>
         <aside
@@ -2102,8 +2179,8 @@ function StayPage() {
               Entire {p.type.toLowerCase()} · {p.city}
             </p>
             <div className="r-booking-inputs">
-              <label>
-                CHECK-IN
+              <label className="r-booking-date-field">
+                <span className="r-booking-field-name">Check-in</span>
                 <input
                   aria-label="Booking check-in"
                   type="date"
@@ -2112,9 +2189,14 @@ function StayPage() {
                   onInput={(e) => chooseArrival(e.currentTarget.value)}
                   onChange={(e) => chooseArrival(e.target.value)}
                 />
+                <div className="r-booking-time-row">
+                  <Clock3 size={13} aria-hidden="true" />
+                  <span>After</span>
+                  <time aria-label={`Check-in time ${rentalTime(p.checkInTime || "15:00")}`} dateTime={p.checkInTime || "15:00"}>{rentalTime(p.checkInTime || "15:00")}</time>
+                </div>
               </label>
-              <label>
-                CHECKOUT
+              <label className="r-booking-date-field">
+                <span className="r-booking-field-name">Checkout</span>
                 <input
                   aria-label="Booking checkout"
                   type="date"
@@ -2125,9 +2207,14 @@ function StayPage() {
                   onInput={(e) => chooseDeparture(e.currentTarget.value)}
                   onChange={(e) => chooseDeparture(e.target.value)}
                 />
+                <div className="r-booking-time-row">
+                  <Clock3 size={13} aria-hidden="true" />
+                  <span>By</span>
+                  <time aria-label={`Checkout time ${rentalTime(p.checkOutTime || "11:00")}`} dateTime={p.checkOutTime || "11:00"}>{rentalTime(p.checkOutTime || "11:00")}</time>
+                </div>
               </label>
               <label className="r-booking-guests">
-                GUESTS
+                <span className="r-booking-field-name">Guests</span>
                 <select
                   aria-label="Booking guests"
                   value={guests}
@@ -2400,8 +2487,8 @@ function StayPage() {
         <div className="r-booking-review">
           <h3>{p.title}</h3><p>{p.city} · {p.type}</p>
           <dl className="r-record">
-            <div><dt>Check-in</dt><dd>{rentalDate(checkIn)} · after {p.checkInTime}</dd></div>
-            <div><dt>Checkout</dt><dd>{rentalDate(checkOut)} · before {p.checkOutTime}</dd></div>
+            <div><dt>Check-in</dt><dd>{rentalDate(checkIn)} · after {rentalTime(p.checkInTime)}</dd></div>
+            <div><dt>Checkout</dt><dd>{rentalDate(checkOut)} · before {rentalTime(p.checkOutTime)}</dd></div>
             <div><dt>Guests</dt><dd>{guests}</dd></div>
             <div><dt>{quote.nights} nights</dt><dd>{money(quote.nightlySubtotal)}</dd></div>
             <div><dt>Cleaning fee</dt><dd>{money(quote.cleaningFee)}</dd></div>
@@ -2423,7 +2510,7 @@ function StayPage() {
           <span> / night</span>
           <small>
             {checkIn
-              ? `${rentalDate(checkIn)}${checkOut ? ` — ${rentalDate(checkOut)}` : ""}`
+              ? `${rentalDate(checkIn)}${checkOut ? ` — ${rentalDate(checkOut)} · before ${rentalTime(p.checkOutTime)}` : ""} · after ${rentalTime(p.checkInTime)}`
               : "Add dates for the total price"}
           </small>
         </div>
@@ -2490,8 +2577,8 @@ function StayPage() {
         <div className="r-rules">
           <div>
             <h3>House rules</h3>
-            <p>Check-in: after {p.checkInTime}</p>
-            <p>Checkout: before {p.checkOutTime}</p>
+            <p>Check-in: after {rentalTime(p.checkInTime)}</p>
+            <p>Checkout: before {rentalTime(p.checkOutTime)}</p>
             <p>Maximum {p.capacity} guests</p>
             <p>
               {p.amenities.includes("Pets allowed")

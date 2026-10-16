@@ -55,6 +55,39 @@
   font-size: 14px;
   transition: border-color 0.18s;
 }
+.r-search-date-fields {
+  gap: 12px;
+}
+.r-design-refresh .r-search-date-fields .r-search-date-field {
+  min-width: 0;
+  padding: 13px 14px;
+  gap: 8px;
+  color: #71654e;
+  background: #fffdf7;
+  border: 1px solid #e7dec4;
+  border-radius: 14px;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  transition: border-color .18s, box-shadow .18s;
+}
+.r-design-refresh .r-search-date-fields .r-search-date-field input {
+  min-width: 0;
+  padding: 9px 10px;
+  color: #302a24;
+  background: #fff;
+  border: 1px solid #eee7d6;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 550;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.r-design-refresh .r-search-date-fields .r-search-date-field:focus-within {
+  border-color: #c9a22a;
+  box-shadow: 0 0 0 3px #d9b53a25;
+}
 .r-design-refresh .r-form {
   gap: 10px;
 }
@@ -1681,29 +1714,96 @@
   margin-bottom: 22px;
 }
 .r-detail-refined .r-booking-inputs {
-  border-color: #dcd4ca;
-  border-radius: 13px;
-  background: #fff;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  margin-bottom: 18px;
 }
-.r-detail-refined .r-booking-inputs label {
+.r-detail-refined .r-booking-inputs .r-booking-date-field,
+.r-detail-refined .r-booking-inputs .r-booking-guests {
+  min-width: 0;
   padding: 13px 12px;
   color: #817366;
-  letter-spacing: 0.7px;
+  background: #fff;
+  border: 1px solid #e5dfd7;
+  border-radius: 13px;
+  letter-spacing: 0;
+  transition: border-color .18s, background .18s, box-shadow .18s;
 }
-.r-detail-refined .r-booking-inputs label:first-child,
-.r-detail-refined .r-booking-guests {
-  border-color: #e5dfd7;
+.r-detail-refined .r-booking-field-name {
+  display: block;
+  color: #817366;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .9px;
+  line-height: 1.2;
+  text-transform: uppercase;
 }
-.r-detail-refined .r-booking-inputs :is(input, select) {
+.r-detail-refined .r-booking-inputs .r-booking-date-field > input {
+  display: block;
   width: 100%;
-  min-width: 0;
+  min-height: 24px;
+  margin-top: 9px;
+  padding: 0;
   color: #302a24;
-  font-size: 12px;
-  margin-top: 5px;
+  background: transparent;
+  border: 0;
+  font-size: 13px;
+  font-weight: 650;
   letter-spacing: 0;
 }
-.r-detail-refined .r-booking-inputs label:focus-within {
-  background: #fffaf8;
+.r-detail-refined .r-booking-time-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  margin-top: 8px;
+  padding: 5px 7px;
+  color: #756748;
+  background: #fff9e8;
+  border-radius: 7px;
+  font-size: 10px;
+  line-height: 1.3;
+}
+.r-detail-refined .r-booking-time-row svg {
+  flex: 0 0 auto;
+  color: #9a7721;
+}
+.r-detail-refined .r-booking-time-row time {
+  display: block;
+  width: auto;
+  min-width: 0;
+  margin-left: auto;
+  color: #3d3526;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+.r-detail-refined .r-booking-inputs .r-booking-guests {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.r-detail-refined .r-booking-inputs .r-booking-guests select {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  color: #302a24;
+  background: transparent;
+  border: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.r-detail-refined .r-booking-date-field:focus-within,
+.r-detail-refined .r-booking-guests:focus-within {
+  border-color: #cba323;
+  background: #fffdf6;
+  box-shadow: 0 0 0 3px #e6c75230;
 }
 .r-detail-refined .r-booking-box > .r-primary {
   border-radius: 12px;
@@ -2131,6 +2231,308 @@
   }
   .r-detail-refined .r-booking-inputs :is(input, select) {
     padding-inline: 0;
+  }
+}
+
+/* Compact stay details: keep every section scannable without losing context. */
+.r-design-refresh .r-detail-refined {
+  padding-top: 18px;
+  padding-bottom: 32px;
+}
+.r-design-refresh .r-detail-refined .r-detail-breadcrumb {
+  margin-bottom: 12px;
+  gap: 6px;
+  font-size: 11px;
+}
+.r-detail-refined .r-detail-title {
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.r-detail-refined .r-detail-title h1 {
+  font-size: clamp(24px, 2.5vw, 32px);
+  line-height: 1.15;
+}
+.r-design-refresh .r-detail-refined .r-detail-title p {
+  margin-top: 6px;
+  font-size: 12px;
+}
+.r-detail-refined .r-detail-title > div:last-child {
+  gap: 10px;
+}
+.r-detail-refined .r-detail-title .r-text-button {
+  padding: 8px 10px;
+  border: 1px solid #e9e3db;
+  border-radius: 9px;
+  font-size: 11px;
+}
+.r-detail-refined .r-property-gallery {
+  grid-template-rows: 195px 195px;
+  gap: 5px;
+  border-radius: 18px;
+}
+.r-detail-refined .r-gallery-button {
+  right: 14px;
+  bottom: 14px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  font-size: 11px;
+}
+.r-stay-navigation {
+  gap: 22px;
+  padding: 14px 0;
+  font-size: 11px;
+}
+.r-design-refresh .r-detail-refined .r-detail-columns {
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 40px;
+  margin-top: 24px;
+}
+.r-design-refresh .r-detail-refined .r-detail-content > section {
+  padding: 21px 0;
+}
+.r-design-refresh .r-detail-refined .r-detail-content > section:first-child {
+  padding-top: 0;
+}
+.r-design-refresh .r-detail-refined :is(.r-detail-content, .r-detail-lower) h2 {
+  margin-top: 6px;
+  font-size: clamp(20px, 1.8vw, 24px);
+}
+.r-stay-stats {
+  gap: 8px;
+  margin-top: 17px;
+}
+.r-stay-stats > span {
+  padding: 12px 10px;
+  border-radius: 11px;
+}
+.r-detail-refined .r-review-summary {
+  margin-top: 13px;
+  padding: 12px 15px;
+  gap: 9px;
+}
+.r-detail-refined .r-host-line .r-person-avatar {
+  width: 48px;
+  height: 48px;
+}
+.r-detail-refined .r-property-highlights {
+  gap: 14px;
+}
+.r-detail-refined .r-property-highlights > div {
+  gap: 12px;
+}
+.r-design-refresh .r-detail-refined .r-detail-content p {
+  line-height: 1.68;
+}
+.r-design-refresh .r-detail-refined .r-stay-description .r-stay-disclosure {
+  margin-top: 15px;
+  padding: 12px 15px;
+}
+.r-detail-refined .r-amenity-list {
+  gap: 8px;
+  margin-top: 16px;
+}
+.r-detail-refined .r-amenity-list > span {
+  padding: 12px 14px;
+  border-radius: 10px;
+  gap: 10px;
+}
+.r-stay-date-summary {
+  gap: 10px;
+  margin-top: 15px;
+  padding: 12px 14px;
+}
+.r-detail-refined .r-calendar {
+  padding: 16px;
+  border-radius: 14px;
+}
+.r-detail-refined .r-calendar .r-section-heading {
+  margin-bottom: 13px;
+}
+.r-detail-refined .r-booking-box {
+  padding: 22px;
+  border-radius: 18px;
+}
+.r-detail-refined .r-booking-price {
+  margin-top: 9px;
+}
+.r-detail-refined .r-detail-lower {
+  padding: 26px 0;
+}
+.r-detail-refined .r-location-preview {
+  min-height: 100px;
+  padding: 20px;
+}
+.r-detail-refined .r-rules {
+  gap: 12px;
+  margin-top: 17px;
+}
+.r-detail-refined .r-rules > div {
+  padding: 17px;
+  border-radius: 12px;
+}
+.r-detail-refined .r-rules h3 {
+  margin-bottom: 9px;
+}
+@media (max-width: 1000px) {
+  .r-design-refresh .r-detail-refined .r-detail-columns {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 26px;
+  }
+}
+@media (max-width: 800px) {
+  .r-design-refresh .r-detail-refined .r-detail-columns {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+}
+@media (max-width: 600px) {
+  .r-design-refresh .r-detail-refined {
+    padding-top: 12px;
+    padding-bottom: 24px;
+  }
+  .r-design-refresh .r-detail-refined .r-detail-breadcrumb {
+    margin-bottom: 9px;
+  }
+  .r-detail-refined .r-detail-title {
+    align-items: flex-start;
+    gap: 9px;
+    margin-bottom: 12px;
+  }
+  .r-detail-refined .r-detail-title h1 {
+    font-size: 25px;
+  }
+  .r-design-refresh .r-detail-refined .r-detail-title p {
+    font-size: 11px;
+  }
+  .r-detail-refined .r-detail-title .r-text-button {
+    padding: 7px 8px;
+  }
+  .r-detail-refined .r-property-gallery {
+    grid-template-rows: 240px;
+    border-radius: 14px;
+  }
+  .r-stay-navigation {
+    padding: 12px 0;
+    gap: 19px;
+  }
+  .r-design-refresh .r-detail-refined .r-detail-columns {
+    margin-top: 17px;
+    gap: 14px;
+  }
+  .r-design-refresh .r-detail-refined .r-detail-content > section {
+    padding: 17px 0;
+  }
+  .r-detail-refined .r-stay-stats {
+    margin-top: 13px;
+  }
+  .r-detail-refined .r-calendar {
+    padding: 13px;
+  }
+  .r-detail-refined .r-booking-box {
+    padding: 18px;
+  }
+  .r-detail-refined .r-detail-lower {
+    padding: 20px 0;
+  }
+  .r-detail-refined .r-rules > div {
+    padding: 14px;
+  }
+}
+.r-detail-refined .r-stay-dates h2 {
+  margin-bottom: 0;
+  font-size: 21px;
+}
+.r-detail-refined .r-stay-date-summary {
+  max-width: 370px;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 9px 11px;
+  border-radius: 10px;
+}
+.r-detail-refined .r-stay-date-summary > svg {
+  width: 17px;
+  height: 17px;
+}
+.r-detail-refined .r-stay-date-summary b {
+  font-size: 11px;
+}
+.r-detail-refined .r-stay-date-summary span {
+  margin-top: 3px;
+  font-size: 10px;
+  line-height: 1.35;
+}
+.r-detail-refined .r-calendar {
+  width: 100%;
+  max-width: 370px;
+  margin: 12px 0;
+  padding: 12px;
+  border-radius: 12px;
+}
+.r-detail-refined .r-date-picker-tabs {
+  gap: 7px;
+  margin-bottom: 10px;
+}
+.r-detail-refined .r-date-picker-tabs button {
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 9px;
+  font-size: 10px;
+}
+.r-detail-refined .r-date-picker-tabs button b {
+  margin-top: 3px;
+  font-size: 12px;
+}
+.r-detail-refined .r-calendar .r-section-heading {
+  margin: 0 0 8px;
+}
+.r-detail-refined .r-calendar .r-section-heading b {
+  font-size: 12px;
+}
+.r-detail-refined .r-calendar .r-secondary {
+  width: 28px;
+  height: 28px;
+}
+.r-detail-refined .r-calendar-grid {
+  gap: 3px;
+  align-items: center;
+}
+.r-detail-refined .r-calendar-grid span {
+  padding: 3px 0;
+  font-size: 9px;
+  line-height: 1.2;
+}
+.r-detail-refined .r-calendar-grid button {
+  justify-self: center;
+  width: min(100%, 36px);
+  min-height: 0;
+  padding: 0;
+  font-size: 10px;
+  line-height: 1;
+}
+.r-detail-refined .r-calendar > p {
+  margin-top: 8px;
+  font-size: 9px;
+  line-height: 1.4;
+}
+.r-detail-refined .r-calendar-help {
+  margin: 7px 0 0;
+  color: #867d72;
+  font-size: 10px;
+  line-height: 1.4;
+}
+@media (max-width: 600px) {
+  .r-detail-refined .r-stay-dates h2 {
+    font-size: 19px;
+  }
+  .r-detail-refined .r-stay-date-summary,
+  .r-detail-refined .r-calendar {
+    max-width: none;
+  }
+  .r-detail-refined .r-calendar {
+    padding: 10px;
+  }
+  .r-detail-refined .r-calendar-grid button {
+    width: min(100%, 39px);
   }
 }
 @media (max-width: 600px) {

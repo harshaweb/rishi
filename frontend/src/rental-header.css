@@ -70,3 +70,149 @@
  .r-design-refresh .r-header-new .r-header-auth .r-header-signup { padding:10px; }
  .r-design-refresh .r-header-new .r-main-tabs { gap:24px; }
 }
+
+/* Refined header controls and clearer navigation hierarchy. */
+.r-design-refresh .r-header-new {
+  position: relative;
+  z-index: 30;
+  background: linear-gradient(180deg, #fffefa 0%, #fff 100%);
+  box-shadow: 0 8px 28px #183d3108;
+}
+.r-design-refresh .r-header-new .r-topbar {
+  border-bottom-color: #e8ede5;
+}
+.r-design-refresh .r-header-new .r-brand-symbol {
+  color: #234c40;
+  background: #edf3eb;
+  border-color: #d8e4d5;
+  box-shadow: 0 3px 10px #183d310c;
+}
+.r-design-refresh .r-header-new .r-brand-symbol > svg + svg {
+  color: #b49a65;
+}
+.r-design-refresh .r-header-new .r-main-tabs {
+  height: auto;
+  gap: 4px;
+  padding: 5px;
+  border: 1px solid #e7ece4;
+  border-radius: 16px;
+  background: #f5f7f2;
+}
+.r-design-refresh .r-header-new .r-main-tabs > a {
+  min-height: 42px;
+  padding: 10px 16px;
+  border-radius: 11px;
+  color: #68736b;
+  transition: color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+.r-design-refresh .r-header-new .r-main-tabs > a.active {
+  color: #234c40;
+  background: #fff;
+  box-shadow: 0 2px 8px #183d3112;
+  font-weight: 650;
+}
+.r-design-refresh .r-header-new .r-main-tabs > a.active::after {
+  display: none;
+}
+.r-design-refresh .r-header-new .r-main-tabs > a:hover:not(.active) {
+  color: #234c40;
+  background: #eaf0e7;
+}
+.r-design-refresh .r-header-new .r-host-link {
+  min-height: 40px;
+  padding: 9px 13px;
+  border: 1px solid #e2e8de;
+  border-radius: 11px;
+  background: #fff;
+  color: #355c48;
+  transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+.r-design-refresh .r-header-new .r-host-link:hover {
+  transform: translateY(-1px);
+  border-color: #bfd0bd;
+  background: #f6f8f3;
+}
+.r-design-refresh .r-header-new .r-header-auth > a:not(.r-header-signup) {
+  padding: 10px 13px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #355c48;
+  transition: background .18s ease, border-color .18s ease;
+}
+.r-design-refresh .r-header-new .r-header-auth > a:not(.r-header-signup):hover {
+  border-color: #e2e8de;
+  background: #f5f7f2;
+}
+.r-design-refresh .r-header-new .r-header-signup {
+  box-shadow: 0 4px 10px #234c401a;
+}
+.r-design-refresh .r-header-new .r-icon-button {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e2e8de;
+  background: #fff;
+  color: #355c48;
+  transition: background .18s ease, border-color .18s ease;
+}
+.r-design-refresh .r-header-new .r-icon-button:hover {
+  border-color: #bfd0bd;
+  background: #f5f7f2;
+}
+.r-design-refresh .r-header-new .r-account-button {
+  border-color: #dce5d9;
+  background: #fff;
+  box-shadow: 0 2px 8px #183d3108;
+}
+.r-design-refresh .r-header-new .r-account-button:hover,
+.r-design-refresh .r-header-new .r-account-button[aria-expanded="true"] {
+  border-color: #b9cdb8;
+  background: #f7f9f5;
+  box-shadow: 0 5px 16px #183d3114;
+}
+.r-design-refresh .r-header-new .r-search {
+  border-color: #dce5d9;
+  border-radius: 17px;
+  box-shadow: 0 8px 26px #183d310c;
+}
+.r-design-refresh .r-header-new .r-search-go {
+  background: #234c40;
+  transition: background .18s ease, transform .18s ease;
+}
+.r-design-refresh .r-header-new .r-search-go:hover {
+  transform: translateY(-1px);
+  background: #17382e;
+}
+@media(max-width:900px) {
+  .r-design-refresh .r-header-new .r-main-tabs {
+    padding: 4px;
+  }
+  .r-design-refresh .r-header-new .r-main-tabs > a {
+    padding-inline: 14px;
+  }
+}
+@media(max-width:600px) {
+  .r-design-refresh .r-header-new .r-topbar {
+    border-bottom: 0;
+  }
+  .r-design-refresh .r-header-new .r-main-tabs {
+    border-radius: 13px;
+    background: #f5f7f2;
+  }
+  .r-design-refresh .r-header-new .r-main-tabs > a {
+    min-height: 36px;
+    padding: 7px 14px;
+    font-size: 11px;
+  }
+  .r-design-refresh .r-header-new .r-account-button {
+    width: 38px;
+    height: 38px;
+    justify-content: center;
+    padding: 0;
+  }
+  .r-design-refresh .r-header-new .r-account-button .r-avatar {
+    display: none;
+  }
+  .r-design-refresh .r-header-new .r-header-auth > a:not(.r-header-signup) {
+    padding: 8px;
+  }
+}

@@ -155,17 +155,29 @@ app.use("/api", (_req, res, next) => {
 })
 app.use("/api", (req, _res, next) => {
   if (!["POST", "PATCH", "DELETE", "PUT"].includes(req.method)) return next()
-  const allowed = [
-    process.env.SITE_URL || "http://localhost:5173",
-    ...(!production
-      ? [
-          "http://localhost:5173",
-          "http://127.0.0.1:5173",
-          "http://localhost:3001",
-        ]
-      : []),
-  ]
-  if (!req.headers.origin || !allowed.includes(req.headers.origin))
+  const origin = req.headers.origin
+  let parsedOrigin: URL | undefined
+  try {
+    if (origin) parsedOrigin = new URL(origin)
+  } catch {
+    // Malformed origins are rejected below.
+  }
+  let configuredOrigin: string | undefined
+  try {
+    configuredOrigin = new URL(
+      process.env.SITE_URL || "http://localhost:5173"
+    ).origin
+  } catch {
+    // Environment validation reports an invalid SITE_URL during startup.
+  }
+  const localDevelopmentOrigin =
+    !production &&
+    parsedOrigin?.protocol === "http:" &&
+    ["localhost", "127.0.0.1", "[::1]"].includes(parsedOrigin.hostname)
+  if (
+    !parsedOrigin ||
+    (parsedOrigin.origin !== configuredOrigin && !localDevelopmentOrigin)
+  )
     return next(fail(403, "This request origin is not allowed."))
   next()
 })

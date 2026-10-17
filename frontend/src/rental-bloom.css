@@ -819,3 +819,23 @@ body:has(.rental-app) { min-width:0; }
     padding-top: 150px;
   }
 }
+
+/* Let the homepage hero fill the full first screen behind the navigation. */
+.r-bloom-home .r-home-intro {
+  box-sizing: border-box;
+  height: 100vh;
+  height: 100svh;
+  min-height: 100vh;
+  min-height: 100svh;
+  max-height: none;
+  align-items: center;
+  padding-top: clamp(132px, 18svh, 190px);
+  padding-bottom: clamp(72px, 9svh, 104px);
+}
+@media (max-width: 760px) {
+  .r-bloom-home .r-home-intro {
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: clamp(118px, 17svh, 150px) 24px clamp(68px, 9svh, 88px);
+  }
+}

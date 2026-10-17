@@ -174,9 +174,13 @@ app.use("/api", (req, _res, next) => {
     !production &&
     parsedOrigin?.protocol === "http:" &&
     ["localhost", "127.0.0.1", "[::1]"].includes(parsedOrigin.hostname)
+  const allowedOrigins = new Set([
+    configuredOrigin,
+    "https://www.shivrajassociate.com",
+  ])
   if (
     !parsedOrigin ||
-    (parsedOrigin.origin !== configuredOrigin && !localDevelopmentOrigin)
+    (!allowedOrigins.has(parsedOrigin.origin) && !localDevelopmentOrigin)
   )
     return next(fail(403, "This request origin is not allowed."))
   next()

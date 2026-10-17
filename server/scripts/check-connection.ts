@@ -66,7 +66,9 @@ async function check() {
 
 try {
   await check()
-  console.log("Omshivraj frontend, backend and PostgreSQL connection verified.")
+  console.log(
+    `Omshivraj frontend, backend and ${isMongo ? "MongoDB" : "PostgreSQL"} connection verified.`
+  )
 } catch (error) {
   console.error(
     error instanceof Error

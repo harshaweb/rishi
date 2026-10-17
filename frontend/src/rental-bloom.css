@@ -839,3 +839,39 @@ body:has(.rental-app) { min-width:0; }
     padding: clamp(118px, 17svh, 150px) 24px clamp(68px, 9svh, 88px);
   }
 }
+
+/* Place the homepage wordmark in the upper-right corner of the header. */
+.r-bloom-home .r-header-new .r-header-brand {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+}
+.r-bloom-home .r-header-new .r-main-tabs {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: start;
+  margin-left: 0;
+}
+.r-bloom-home .r-header-new .r-header-actions {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  gap: 16px;
+}
+@media (max-width: 760px) {
+  .r-bloom-home .r-header-new .r-header-brand {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .r-bloom-home .r-header-new .r-main-tabs {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
+  }
+  .r-bloom-home .r-header-new .r-header-actions {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+    margin-left: 0;
+  }
+}

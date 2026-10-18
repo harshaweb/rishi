@@ -896,3 +896,52 @@ body:has(.rental-app) { min-width:0; }
   font-size: 11px;
   line-height: 1.45;
 }
+
+/* Keep the homepage hero concise while retaining its search and video. */
+.r-bloom-home .r-home-intro {
+  height: clamp(540px, 72svh, 660px);
+  min-height: 540px;
+  max-height: 660px;
+  padding-top: clamp(125px, 15svh, 155px);
+  padding-bottom: 48px;
+}
+.r-bloom-home .r-home-intro h1 {
+  margin-bottom: 14px;
+  font-size: clamp(36px, 4.2vw, 56px);
+  line-height: 1.12;
+}
+.r-bloom-home .r-home-hero-content p {
+  max-width: 430px;
+  margin-bottom: 20px;
+  font-size: clamp(16px, 1.55vw, 20px);
+  line-height: 1.45;
+}
+.r-bloom-hero-search {
+  padding: 6px;
+}
+.r-bloom-hero-search label,
+.r-bloom-hero-search .r-bloom-search-guests {
+  padding-block: 4px;
+}
+.r-bloom-hero-search button {
+  min-height: 42px;
+}
+.r-bloom-direct {
+  margin-top: 14px;
+}
+@media (max-width: 760px) {
+  .r-bloom-home .r-home-intro {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    padding: 124px 22px 46px;
+  }
+  .r-bloom-home .r-home-hero-content p {
+    margin-bottom: 17px;
+  }
+  .r-bloom-hero-search label,
+  .r-bloom-hero-search .r-bloom-search-guests {
+    padding-block: 7px;
+  }
+}

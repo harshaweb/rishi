@@ -878,7 +878,8 @@ body:has(.rental-app) { min-width:0; }
   color: #657368;
   font-size: 12px;
 }
-.r-booking-time-select input {
+.r-booking-time-select input,
+.r-booking-time-select select {
   min-width: 0;
   margin-left: auto;
   border: 0;

@@ -1789,8 +1789,7 @@ function StayPage() {
   const toMinutes = (value: string) => Number(value.slice(0, 2)) * 60 + Number(value.slice(3))
   const toClockValue = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`
   const durationHours = (toMinutes(departureTime) - toMinutes(arrivalTime)) / 60
-  const earliestHourlyDeparture = toClockValue(toMinutes(arrivalTime) + 180)
-  const latestHourlyDeparture = toClockValue(Math.min(toMinutes(arrivalTime) + 720, 23 * 60))
+  const maxHourlyHours = Math.min(12, Math.floor((23 * 60 - toMinutes(arrivalTime)) / 60))
   function chooseHourlyArrivalTime(value: string) {
     setArrivalTime(value)
     if (/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) {
@@ -2258,12 +2257,14 @@ function StayPage() {
                 </div>}
               </label>
               {bookingType === "HOURLY" ? <label className="r-booking-date-field r-hourly-departure-field">
-                <span className="r-booking-field-name">Departure time</span>
-                <div className="r-booking-time-select"><Clock3 size={13} aria-hidden="true" /><span>Leave</span><input aria-label="Hourly booking departure time" type="time" step={3600} min={earliestHourlyDeparture} max={latestHourlyDeparture} value={departureTime} onChange={(event) => { setDepartureTime(event.target.value); clearQuote() }} /></div>
+                <span className="r-booking-field-name">Duration</span>
+                <div className="r-booking-time-select"><Clock3 size={13} aria-hidden="true" /><span>Stay</span><select aria-label="Hourly booking duration" value={durationHours} onChange={(event) => { setDepartureTime(toClockValue(toMinutes(arrivalTime) + Number(event.target.value) * 60)); clearQuote() }}>
+                  {Array.from({ length: Math.max(0, maxHourlyHours - 2) }, (_, index) => index + 3).map((hours) => <option key={hours} value={hours}>{hours} hours</option>)}
+                </select></div>
                 <small className="r-hourly-availability-note" role="status">
                   {Number.isInteger(durationHours) && durationHours >= 3 && durationHours <= 12
-                    ? `${durationHours} hours · ${money(RENTAL_HOURLY_RATE * durationHours)} before fees · full date reserved`
-                    : "Choose 3–12 whole hours · ₹1,500 per hour"}
+                    ? `Leave at ${rentalTime(departureTime)} · ${money(RENTAL_HOURLY_RATE * durationHours)} before fees · date reserved`
+                    : "Choose a 3–12 hour stay · ₹1,500 per hour"}
                 </small>
               </label> : <label className="r-booking-date-field">
                 <span className="r-booking-field-name">Checkout</span>

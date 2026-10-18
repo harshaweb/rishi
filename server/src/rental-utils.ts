@@ -73,9 +73,9 @@ export function calculateHourlyRentalPrice(
   const values = [hours, cleaning, feeBps, taxBps, discountPercent]
   if (
     values.some((x) => !Number.isSafeInteger(x) || x < 0) ||
-    hours < 3 || hours > 12 ||
+    hours < 2 || hours > 12 ||
     discountPercent > 50 || feeBps > 3000 || taxBps > 4000
-  ) throw rentalFail(400, "Hourly bookings require 3–12 whole hours.")
+  ) throw rentalFail(400, "Hourly bookings require 2–12 whole hours.")
   const hourlyRate = RENTAL_HOURLY_RATE
   const nightlySubtotal = hourlyRate * hours
   const discount = Math.floor((nightlySubtotal * discountPercent) / 100)
@@ -103,8 +103,8 @@ export function rentalHours(arrivalTime: string, departureTime: string) {
     throw rentalFail(400, "Choose valid arrival and departure times.")
   const minutes = (value: string) => Number(value.slice(0, 2)) * 60 + Number(value.slice(3))
   const duration = (minutes(departureTime) - minutes(arrivalTime)) / 60
-  if (!Number.isInteger(duration) || duration < 3 || duration > 12)
-    throw rentalFail(400, "Choose a 3–12 hour booking on the same day.")
+  if (!Number.isInteger(duration) || duration < 2 || duration > 12)
+    throw rentalFail(400, "Choose a 2–12 hour booking on the same day.")
   return duration
 }
 export function verifyRentalSignature(

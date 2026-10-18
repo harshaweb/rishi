@@ -98,7 +98,8 @@ export type RentalBooking = {
   guestName?: string
   reviewId?: string
 }
-export const RENTAL_HOURLY_RATE = 150000
+// ₹1,500 for the two-hour minimum; each extra hour is ₹750.
+export const RENTAL_HOURLY_RATE = 75000
 export function rentalNightlyRate(property: Pick<RentalProperty, "nightlyRate" | "capacity">, guests = 1) {
   return guests >= 2 && property.capacity >= 2
     ? Math.max(property.nightlyRate, 350000)

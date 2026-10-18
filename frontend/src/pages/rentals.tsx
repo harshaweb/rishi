@@ -1089,12 +1089,15 @@ function HomeFlatCatalogue({ items, loading }: { items: RentalProperty[]; loadin
         <Link className="r-secondary" to="/search"><SlidersHorizontal size={16} /> More filters</Link>
       </div>
       <div className="r-catalogue-film" aria-label="Property walkthrough">
-        <RentalVideo source="/videos/product-tour-oct14" label="Property walkthrough — bedroom and lounge" className="r-catalogue-film-video" />
+        <div className="r-catalogue-film-stage">
+          <span className="r-catalogue-film-stage-label">A MOMENT INSIDE</span>
+          <RentalVideo source="/videos/product-tour-oct14" label="Property walkthrough — bedroom and lounge" className="r-catalogue-film-video" />
+        </div>
         <div className="r-catalogue-film-copy">
           <span className="r-kicker">INSIDE THE SPACE</span>
-          <h3>A closer look at your next stay.</h3>
+          <h3>A closer look at your <em>next stay.</em></h3>
           <p>Explore the bedroom, lounge and finishing touches in this property walkthrough.</p>
-          <span className="r-catalogue-film-meta">10-second walkthrough · Tap to turn on sound</span>
+          <span className="r-catalogue-film-meta"><Clock3 size={14} aria-hidden="true" /> 10-second walkthrough <i aria-hidden="true" /> Tap to turn on sound</span>
           <a className="r-secondary" href="#city-flat-options">Explore the flats <ArrowUpRight size={16} /></a>
         </div>
       </div>
@@ -1216,10 +1219,15 @@ function HomePage() {
           </div>
         </div>
         <section className="r-bloom-welcome">
-          <div>
-            <h2>Your next stay,<br />made simple.</h2>
+          <div className="r-bloom-welcome-copy">
+            <span className="r-bloom-welcome-eyebrow"><Sparkles size={14} aria-hidden="true" /> STAYS, MADE PERSONAL</span>
+            <h2>Your next stay,<br /><span>made simple.</span></h2>
             <p>A city break, a work trip, or a little more time together. Find your place, explore the details, and keep every request in one account.</p>
             <a href="#all-flats" className="r-primary">Explore our stays <ArrowUpRight size={18} /></a>
+            <div className="r-bloom-welcome-details" aria-label="Stay highlights">
+              <span><ShieldCheck size={15} aria-hidden="true" /> Direct host requests</span>
+              <span><MapPin size={15} aria-hidden="true" /> Delhi &amp; NCR</span>
+            </div>
           </div>
           <Link to="/search?destination=Delhi" className="r-bloom-welcome-photo">
             <img src={newOwnerPhotos[5].src} alt={newOwnerPhotos[5].alt} loading="lazy" />
@@ -1723,7 +1731,7 @@ function SearchPage() {
 }
 
 function identityBookingDraft(slug: string) {
-  const empty = { checkIn: "", checkOut: "", guests: 2, coupon: "", bookingType: "OVERNIGHT" as const, arrivalTime: "10:00", departureTime: "13:00" }
+  const empty = { checkIn: "", checkOut: "", guests: 2, coupon: "", bookingType: "OVERNIGHT" as const, arrivalTime: "10:00", departureTime: "12:00" }
   if (typeof window === "undefined") return empty
   const params = new URLSearchParams(window.location.search)
   const resume = params.has("digilocker") || params.get("booking") === "resume"
@@ -1736,7 +1744,7 @@ function identityBookingDraft(slug: string) {
       coupon: "",
       bookingType: "OVERNIGHT" as const,
       arrivalTime: "10:00",
-      departureTime: "13:00",
+      departureTime: "12:00",
     }
   }
   try {
@@ -1754,7 +1762,7 @@ function identityBookingDraft(slug: string) {
       coupon: typeof value.coupon === "string" ? value.coupon : "",
       bookingType: value.bookingType === "HOURLY" ? "HOURLY" as const : "OVERNIGHT" as const,
       arrivalTime: typeof value.arrivalTime === "string" ? value.arrivalTime : "10:00",
-      departureTime: typeof value.departureTime === "string" ? value.departureTime : "13:00",
+      departureTime: typeof value.departureTime === "string" ? value.departureTime : "12:00",
     }
   } catch {
     return empty
@@ -1839,8 +1847,8 @@ function StayPage() {
     setArrivalTime(value)
     if (/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) {
       const duration = toMinutes(departureTime) - toMinutes(value)
-      if (duration < 3 * 60 || duration > 12 * 60)
-        setDepartureTime(toClockValue(toMinutes(value) + 3 * 60))
+      if (duration < 2 * 60 || duration > 12 * 60)
+        setDepartureTime(toClockValue(toMinutes(value) + 2 * 60))
     }
     clearQuote()
   }
@@ -1901,8 +1909,8 @@ function StayPage() {
       setError(bookingType === "HOURLY" ? "Choose an available date for your hourly booking." : "Choose available check-in and checkout dates for a stay of 1–90 nights.")
       return
     }
-    if (bookingType === "HOURLY" && (!Number.isInteger(durationHours) || durationHours < 3 || durationHours > 12)) {
-      setError("Choose an hourly slot lasting 3–12 hours.")
+    if (bookingType === "HOURLY" && (!Number.isInteger(durationHours) || durationHours < 2 || durationHours > 12)) {
+      setError("Choose an hourly slot lasting 2–12 hours.")
       return
     }
     setBusy(true)
@@ -2267,8 +2275,8 @@ function StayPage() {
           <div className="r-booking-box">
             <span className="r-stay-eyebrow">MAKE YOURSELF AT HOME</span>
             <div className="r-booking-price">
-              <b>{bookingType === "HOURLY" ? money(RENTAL_HOURLY_RATE) : money(rentalNightlyRate(p, guests))}</b>
-              <span>{bookingType === "HOURLY" ? "hour · 3-hour minimum" : "night"}</span>
+              <b>{bookingType === "HOURLY" ? money(RENTAL_HOURLY_RATE * 2) : money(rentalNightlyRate(p, guests))}</b>
+              <span>{bookingType === "HOURLY" ? "2 hours · ₹750 per extra hour" : "night"}</span>
             </div>
             <p className="r-booking-subtitle">
               Entire {p.type.toLowerCase()} · {p.city}
@@ -2307,12 +2315,12 @@ function StayPage() {
               {bookingType === "HOURLY" ? <label className="r-booking-date-field r-hourly-departure-field">
                 <span className="r-booking-field-name">Duration</span>
                 <div className="r-booking-time-select"><Clock3 size={13} aria-hidden="true" /><span>Stay</span><select aria-label="Hourly booking duration" value={durationHours} onChange={(event) => { setDepartureTime(toClockValue(toMinutes(arrivalTime) + Number(event.target.value) * 60)); clearQuote() }}>
-                  {Array.from({ length: Math.max(0, maxHourlyHours - 2) }, (_, index) => index + 3).map((hours) => <option key={hours} value={hours}>{hours} hours</option>)}
+                  {Array.from({ length: Math.max(0, maxHourlyHours - 1) }, (_, index) => index + 2).map((hours) => <option key={hours} value={hours}>{hours} hours</option>)}
                 </select></div>
                 <small className="r-hourly-availability-note" role="status">
-                  {Number.isInteger(durationHours) && durationHours >= 3 && durationHours <= 12
+                  {Number.isInteger(durationHours) && durationHours >= 2 && durationHours <= 12
                     ? `Leave at ${rentalTime(departureTime)} · ${money(RENTAL_HOURLY_RATE * durationHours)} before fees · date reserved`
-                    : "Choose a 3–12 hour stay · ₹1,500 per hour"}
+                    : "₹1,500 for 2 hours · ₹750 per extra hour"}
                 </small>
               </label> : <label className="r-booking-date-field">
                 <span className="r-booking-field-name">Checkout</span>
@@ -2636,12 +2644,12 @@ function StayPage() {
       </RentalDialog>}
       <div className="r-mobile-booking" aria-label="Stay booking shortcut">
         <div>
-          <b>{bookingType === "HOURLY" ? money(RENTAL_HOURLY_RATE) : money(rentalNightlyRate(p, guests))}</b>
-          <span> / {bookingType === "HOURLY" ? "hour" : "night"}</span>
+          <b>{bookingType === "HOURLY" ? money(RENTAL_HOURLY_RATE * 2) : money(rentalNightlyRate(p, guests))}</b>
+          <span> / {bookingType === "HOURLY" ? "2 hours" : "night"}</span>
           <small>
             {checkIn
-              ? bookingType === "HOURLY" ? `${rentalDate(checkIn)} · ${rentalTime(arrivalTime)}–${rentalTime(departureTime)}` : `${rentalDate(checkIn)}${checkOut ? ` — ${rentalDate(checkOut)} · before ${rentalTime(p.checkOutTime)}` : ""} · after ${rentalTime(p.checkInTime)}`
-              : "Add dates for the total price"}
+              ? bookingType === "HOURLY" ? `${rentalDate(checkIn)} · ${rentalTime(arrivalTime)}–${rentalTime(departureTime)} · ₹750 per extra hour` : `${rentalDate(checkIn)}${checkOut ? ` — ${rentalDate(checkOut)} · before ${rentalTime(p.checkOutTime)}` : ""} · after ${rentalTime(p.checkInTime)}`
+              : bookingType === "HOURLY" ? "₹1,500 for 2 hours · fees may apply" : "Add dates for the total price"}
           </small>
         </div>
         <a href="#stay-booking">

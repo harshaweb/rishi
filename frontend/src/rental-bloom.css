@@ -464,19 +464,85 @@ body:has(.rental-app) { min-width:0; }
  .r-design-refresh .r-footer-compact { padding-bottom:calc(70px + env(safe-area-inset-bottom,0px)); }
  .r-bloom-home .r-footer-compact { padding-bottom:0; }
 }
-.r-catalogue-film { display:flex; align-items:center; gap:clamp(24px,4vw,64px); padding:24px; margin:24px 0 30px; background:#fffbea; border:1px solid #ecdfa8; border-radius:16px; }
-.r-catalogue-film .r-catalogue-film-video { display:block; width:180px; max-width:100%; height:auto; max-height:none; aspect-ratio:9/16; object-fit:contain; background:#151515; border-radius:12px; flex-shrink:0; margin:0; }
-.r-catalogue-film-copy { max-width:540px; }
-.r-catalogue-film-copy h3 { font-size:clamp(24px,3vw,38px); line-height:1.15; margin:12px 0; color:#262626; }
-.r-catalogue-film-copy p { line-height:1.7; color:#625d4c; font-size:15px; }
-.r-catalogue-film-meta { display:block; font-size:12px; color:#716948; margin:18px 0; }
-.r-catalogue-film-copy .r-secondary { display:inline-flex; align-items:center; gap:16px; background:#ffcc09; color:#292300; border-color:#ffcc09; }
+.r-catalogue-film {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(235px, .85fr) minmax(0, 1.15fr);
+  align-items: center;
+  gap: clamp(32px, 6vw, 82px);
+  overflow: hidden;
+  padding: clamp(28px, 5vw, 58px);
+  margin: 28px 0 34px;
+  border: 1px solid #dfe7da;
+  border-radius: 24px;
+  background: linear-gradient(120deg, #edf2e8 0%, #fafbf7 57%, #f1f5ed 100%);
+  box-shadow: 0 14px 38px #193a2a0c;
+}
+.r-catalogue-film::after {
+  position: absolute;
+  top: -145px;
+  right: -80px;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #dbe7d277, #dbe7d200 72%);
+  content: "";
+  pointer-events: none;
+}
+.r-catalogue-film-stage {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 15px;
+  min-width: 0;
+  padding: 22px 24px 18px;
+  border: 1px solid #ffffff16;
+  border-radius: 22px;
+  background: linear-gradient(150deg, #234637, #102c23);
+  box-shadow: 0 18px 35px #15352830;
+}
+.r-catalogue-film-stage-label {
+  color: #d6dfc6;
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: .18em;
+}
+.r-catalogue-film .r-catalogue-film-video {
+  display: block;
+  width: min(100%, 210px);
+  max-width: 100%;
+  height: auto;
+  max-height: none;
+  aspect-ratio: 9/16;
+  object-fit: contain;
+  background: #101410;
+  border: 1px solid #ffffff20;
+  border-radius: 14px;
+  box-shadow: 0 12px 24px #0005;
+  margin: 0;
+}
+.r-catalogue-film-copy { position: relative; z-index: 1; max-width: 540px; }
+.r-catalogue-film-copy .r-kicker { color: #71835c; font-size: 9px; font-weight: 750; letter-spacing: .15em; }
+.r-catalogue-film-copy h3 { max-width: 520px; font-size: clamp(30px, 4vw, 48px); line-height: 1.08; letter-spacing: -1.8px; margin: 16px 0; color: #203b2e; }
+.r-catalogue-film-copy h3 em { color: #71864f; font-weight: 500; }
+.r-catalogue-film-copy p { max-width: 430px; line-height: 1.75; color: #5e6b61; font-size: 15px; }
+.r-catalogue-film-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; width: fit-content; margin: 20px 0 24px; padding: 9px 12px; border: 1px solid #dfe7da; border-radius: 999px; background: #ffffffa8; color: #657263; font-size: 10px; font-weight: 600; }
+.r-catalogue-film-meta svg { color: #778c5a; }
+.r-catalogue-film-meta i { width: 3px; height: 3px; border-radius: 50%; background: #9aa792; }
+.r-catalogue-film-copy .r-secondary { display: inline-flex; align-items: center; gap: 18px; min-height: 46px; padding: 0 17px; border: 1px solid #203c2e; border-radius: 10px; background: #203c2e; color: #fff; font-size: 12px; font-weight: 650; transition: background-color 180ms ease, transform 180ms ease, box-shadow 180ms ease; }
+.r-catalogue-film-copy .r-secondary:hover { transform: translateY(-1px); background: #2d523d; box-shadow: 0 8px 18px #203c2e24; }
+.r-catalogue-film-copy .r-secondary svg { transition: transform 180ms ease; }
+.r-catalogue-film-copy .r-secondary:hover svg { transform: translate(2px, -2px); }
 #city-flat-options { scroll-margin-top:140px; }
 @media(max-width:600px) {
- .r-catalogue-film { flex-direction:column; padding:20px; gap:20px; align-items:stretch; }
- .r-catalogue-film .r-catalogue-film-video { width:min(100%,225px); align-self:center; }
- .r-catalogue-film-copy { text-align:center; }
- .r-catalogue-film-copy h3 { font-size:26px; }
+ .r-catalogue-film { grid-template-columns:minmax(0,1fr); padding:22px; gap:24px; border-radius:19px; }
+ .r-catalogue-film-stage { width:min(100%,270px); justify-self:center; padding:17px 20px 15px; border-radius:18px; }
+ .r-catalogue-film .r-catalogue-film-video { width:min(100%,180px); }
+ .r-catalogue-film-copy { text-align:left; }
+ .r-catalogue-film-copy h3 { font-size:clamp(29px,8vw,36px); letter-spacing:-1px; }
+ .r-catalogue-film-copy p { font-size:14px; }
+ .r-catalogue-film-meta { margin:16px 0 20px; font-size:9px; }
 }
 .r-booking-review > p { line-height:1.65; color:#625b4b; font-size:14px; }
 .r-booking-review .r-record { margin:20px 0; }
@@ -1548,6 +1614,8 @@ body:has(.rental-app) { min-width:0; }
 
 /* Welcome feature section */
 .r-bloom-welcome {
+  position: relative;
+  isolation: isolate;
   width: min(1160px, calc(100% - 64px));
   margin: 36px auto 54px;
   padding: clamp(28px, 5vw, 58px);
@@ -1558,6 +1626,30 @@ body:has(.rental-app) { min-width:0; }
   background: linear-gradient(120deg, #f4f7f2 0%, #fbfcf9 58%, #f1f5ef 100%);
   box-shadow: 0 16px 44px #1d3b2910;
 }
+.r-bloom-welcome::before {
+  position: absolute;
+  z-index: -1;
+  top: -110px;
+  left: 38%;
+  width: 350px;
+  height: 350px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #dce8d166, #dce8d100 70%);
+  content: "";
+  pointer-events: none;
+}
+.r-bloom-welcome-copy { min-width: 0; }
+.r-bloom-welcome-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+  color: #637c62;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .14em;
+}
+.r-bloom-welcome-eyebrow svg { color: #9caa66; }
 .r-bloom-welcome h2 {
   margin: 0 0 18px;
   color: #203c2e;
@@ -1565,6 +1657,10 @@ body:has(.rental-app) { min-width:0; }
   font-weight: 720;
   letter-spacing: -1.8px;
   line-height: 1.06;
+}
+.r-bloom-welcome h2 span {
+  color: #71864f;
+  background: linear-gradient(transparent 78%, #e0e9ce 78%);
 }
 .r-bloom-welcome p {
   max-width: 430px;
@@ -1574,21 +1670,52 @@ body:has(.rental-app) { min-width:0; }
   line-height: 1.7;
 }
 .r-bloom-welcome .r-primary {
-  min-height: 46px;
-  gap: 12px;
-  padding-inline: 18px;
-  border: 0;
-  border-radius: 10px;
-  background: #203c2e;
-  color: #fff;
+  min-height: 52px;
+  gap: 20px;
+  padding: 5px 6px 5px 20px;
+  border: 1px solid #cdd9ca;
+  border-radius: 999px;
+  background: #fffefa;
+  color: #203c2e;
   font-size: 13px;
-  font-weight: 650;
-  box-shadow: 0 6px 16px #203c2e20;
+  font-weight: 700;
+  box-shadow: 0 5px 14px #203c2e12;
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, color 180ms ease, transform 180ms ease;
 }
 .r-bloom-welcome .r-primary:hover {
-  background: #2c523d;
+  border-color: #203c2e;
+  background: #203c2e;
+  color: #fff;
+  box-shadow: 0 9px 20px #203c2e25;
   transform: translateY(-1px);
 }
+.r-bloom-welcome .r-primary svg {
+  box-sizing: content-box;
+  width: 18px;
+  height: 18px;
+  padding: 9px;
+  border-radius: 50%;
+  background: #e8efe3;
+  color: #203c2e;
+  transition: background-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+.r-bloom-welcome .r-primary:hover svg {
+  background: #fff;
+  color: #203c2e;
+  transform: translate(1px, -1px);
+}
+.r-bloom-welcome-details {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+  margin-top: 22px;
+  color: #667468;
+  font-size: 11px;
+  font-weight: 600;
+}
+.r-bloom-welcome-details span { display: inline-flex; align-items: center; gap: 7px; }
+.r-bloom-welcome-details svg { color: #758a58; }
 .r-bloom-welcome-photo {
   position: relative;
   min-height: 270px;
@@ -1667,10 +1794,12 @@ body:has(.rental-app) { min-width:0; }
     font-size: clamp(34px, 9vw, 44px);
     letter-spacing: -1.2px;
   }
+  .r-bloom-welcome-eyebrow { margin-bottom: 14px; }
   .r-bloom-welcome p {
     margin-bottom: 19px;
     font-size: 14px;
   }
+  .r-bloom-welcome-details { margin-top: 17px; gap: 9px 16px; font-size: 10px; }
   .r-bloom-welcome-photo {
     width: 100%;
     min-height: 0;

@@ -1746,6 +1746,7 @@ function StayPage() {
     } as Record<string, string>
   )[identityResult || ""]
   const [gallery, setGallery] = useState<number | null>(null),
+    [galleryPaused, setGalleryPaused] = useState(false),
     [checkIn, setCheckIn] = useState(draft.checkIn),
     [checkOut, setCheckOut] = useState(draft.checkOut),
     [guests, setGuests] = useState(draft.guests),
@@ -1759,6 +1760,17 @@ function StayPage() {
     [reportBody, setReportBody] = useState("")
   const bookingKey = useRef("")
   const quoteVersion = useRef(0)
+  useEffect(() => {
+    if (gallery === null || galleryPaused || !p) return
+    const imageCount = p.images.length
+    if (imageCount < 2) return
+    const timer = window.setInterval(() => {
+      setGallery((current) =>
+        current === null ? null : (current + 1) % imageCount
+      )
+    }, 3500)
+    return () => window.clearInterval(timer)
+  }, [gallery !== null, galleryPaused, p?.id])
   const [reviewBooking, setReviewBooking] = useState(false)
   const [verificationNotice, setVerificationNotice] = useState("")
   const [bookingAttempted, setBookingAttempted] = useState(false)
@@ -1954,13 +1966,19 @@ function StayPage() {
         {p.images.slice(0, 5).map((src, i) => (
           <button
             key={i}
-            onClick={() => setGallery(i)}
+            onClick={() => {
+              setGalleryPaused(false)
+              setGallery(i)
+            }}
             aria-label={`Open property photo ${i + 1}`}
           >
             <img src={src} alt={`${p.title}, photo ${i + 1}`} />
           </button>
         ))}
-        <button className="r-gallery-button" onClick={() => setGallery(0)}>
+        <button className="r-gallery-button" onClick={() => {
+          setGalleryPaused(false)
+          setGallery(0)
+        }}>
           <Grid2X2 size={15} />
           Show all photos
         </button>
@@ -2666,6 +2684,13 @@ function StayPage() {
             alt={`${p.title} photo ${gallery + 1}`}
           />
           <div className="r-modal-actions">
+            <button
+              className="r-secondary"
+              onClick={() => setGalleryPaused((paused) => !paused)}
+              aria-pressed={galleryPaused}
+            >
+              {galleryPaused ? "Play slideshow" : "Pause slideshow"}
+            </button>
             <button
               className="r-secondary"
               onClick={() =>

@@ -390,6 +390,39 @@ body:has(.rental-app) { min-width:0; }
 @media(prefers-reduced-motion:reduce) { .r-hero-film-toggle { display:none; } }
 @media(prefers-reduced-motion:reduce) { .r-bloom-home .r-home-intro .r-home-hero-slide { animation:none; transition:none; } }
 .r-bloom-home .r-mobile-nav { display:none; }
+
+/* Let the homepage hero own the full first viewport on every screen. */
+.r-bloom-home .r-home-intro {
+  height: 100svh;
+  min-height: 100svh;
+  max-height: none;
+  align-items: center;
+  padding-top: clamp(132px, 16vh, 184px);
+  padding-bottom: clamp(56px, 8vh, 92px);
+}
+.r-bloom-home .r-home-hero-content { max-width: 880px; }
+.r-bloom-home .r-home-intro h1 { font-size: clamp(52px, 6.2vw, 78px); }
+.r-bloom-home .r-home-hero-content p { max-width: 520px; }
+@supports (height: 100dvh) {
+  .r-bloom-home .r-home-intro { height: 100dvh; min-height: 100dvh; }
+}
+@media(max-width:760px) {
+  .r-bloom-home .r-home-intro {
+    height: 100svh;
+    min-height: 100svh;
+    max-height: none;
+    padding: 132px 28px 66px;
+    align-items: center;
+  }
+  .r-bloom-home .r-home-intro h1 { font-size: clamp(38px, 8vw, 54px); }
+  .r-bloom-home .r-home-hero-content p { max-width: 430px; font-size: clamp(16px, 2.5vw, 19px); }
+  @supports (height: 100dvh) {
+    .r-bloom-home .r-home-intro { height: 100dvh; min-height: 100dvh; }
+  }
+}
+@media(max-width:500px) {
+  .r-bloom-home .r-home-intro { padding: 120px 24px 54px; }
+}
 @media(max-width:600px) {
  .r-bloom-home .r-city-tabs-only { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; overflow:visible; }
  .r-bloom-home .r-city-tabs-only button { justify-content:space-between; min-width:0; }

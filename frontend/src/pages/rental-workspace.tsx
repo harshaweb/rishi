@@ -2,6 +2,7 @@ import { rentalCheckout } from "../lib/rental-checkout"
 import { useEffect, useState, type FormEvent, type ReactNode } from "react"
 import {
   Link,
+  Navigate,
   NavLink,
   useLocation,
   useNavigate,
@@ -158,7 +159,14 @@ function Guard({ children, roles }: { children: ReactNode; roles?: string[] }) {
       </div>
     )
   if (!session) return <p role="status">Checking your account…</p>
-  if (!session.user)
+  if (!session.user) {
+    if (roles?.includes("ADMIN"))
+      return (
+        <Navigate
+          to={`/login?next=${encodeURIComponent(pathname)}`}
+          replace
+        />
+      )
     return (
       <div className="r-empty">
         <h2>A place for your plans.</h2>
@@ -171,13 +179,27 @@ function Guard({ children, roles }: { children: ReactNode; roles?: string[] }) {
         </Link>
       </div>
     )
-  if (roles && !roles.includes(session.user.role))
+  }
+  if (roles && !roles.includes(session.user.role)) {
+    if (roles.includes("ADMIN"))
+      return (
+        <div className="r-empty" role="alert">
+          <h2>Administrator access required.</h2>
+          <p>
+            This account doesn’t have permission to open the admin workspace.
+          </p>
+          <Link className="r-primary" to="/">
+            Return to the website
+          </Link>
+        </div>
+      )
     return (
       <div className="r-empty">
         <h2>Hosting starts with approval.</h2>
         <Link to="/host">Apply to host</Link>
       </div>
     )
+  }
   return children
 }
 function Auth() {

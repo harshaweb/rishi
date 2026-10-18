@@ -298,6 +298,10 @@ model RentalBlockedDate {
 model RentalBooking {
   bookingMode String @default("HOST_APPROVAL")
   cancellation String @default("FLEXIBLE")
+  bookingType String @default("OVERNIGHT")
+  durationHours Int?
+  arrivalTime DateTime @default(dbgenerated("'15:00:00'::time")) @db.Time(6)
+  departureTime DateTime @default(dbgenerated("'11:00:00'::time")) @db.Time(6)
   id                 String               @id
   reference          String               @unique
   propertyId         String

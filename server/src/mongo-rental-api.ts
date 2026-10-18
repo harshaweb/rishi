@@ -16,6 +16,7 @@ import { rentalDestination, rentalCity } from "../shared/rental-region.js"
 import { rentalFail as fail } from "./rental-errors.js"
 import {
   rentalDates,
+  rentalHours,
   rentalEmail,
   rentalRefundAmount,
   razorpay,
@@ -480,7 +481,7 @@ r.post(
     const d = dateInput.parse(req.body)
     const p = await publicProperty(param(req))
     if (d.guests > p.capacity) throw fail(400, "Too many guests for this stay.")
-    const price = await quote(p, d.checkIn, d.checkOut, d.coupon)
+    const price = await quote(p, d.checkIn, d.checkOut, d.coupon, undefined, d.bookingType, d.arrivalTime, d.departureTime)
     if (!(await available(p.id, d.checkIn, d.checkOut)))
       throw fail(409, "Those dates are no longer available.")
     res.json({ ...price, bookingMode: p.bookingMode })
@@ -517,7 +518,9 @@ r.post(
           existing.propertyId !== p.id ||
           existing.checkIn !== d.checkIn ||
           existing.checkOut !== d.checkOut ||
-          existing.guests !== d.guests
+          existing.guests !== d.guests ||
+          existing.bookingType !== d.bookingType ||
+          (d.bookingType === "HOURLY" && (existing.arrivalTime !== d.arrivalTime || existing.departureTime !== d.departureTime))
         )
           throw fail(
             409,
@@ -535,7 +538,7 @@ r.post(
           503,
           "Online payments are not configured for this stay. No booking or charge was made."
         )
-      const price = await quote(p, d.checkIn, d.checkOut, d.coupon, session)
+      const price = await quote(p, d.checkIn, d.checkOut, d.coupon, session, d.bookingType, d.arrivalTime, d.departureTime)
       if (d.expectedTotal !== undefined && d.expectedTotal !== price.total)
         throw fail(409, "The price has changed. Check availability again to review the updated total. No booking was created.")
       await expire(p.id, session)
@@ -552,6 +555,10 @@ r.post(
         reference: `HV-${rid().slice(0, 8).toUpperCase()}`,
         bookingMode: p.bookingMode,
         cancellation: p.cancellation,
+        bookingType: d.bookingType,
+        durationHours: d.bookingType === "HOURLY" ? rentalHours(d.arrivalTime, d.departureTime, d.checkIn) : null,
+        arrivalTime: d.bookingType === "HOURLY" ? d.arrivalTime : p.checkInTime,
+        departureTime: d.bookingType === "HOURLY" ? d.departureTime : p.checkOutTime,
         status: "PENDING",
         paymentStatus: "UNPAID",
         cancelReason: "",

@@ -4,6 +4,7 @@ import { pool } from "./db.js"
 import { isMongo } from "./database-url.js"
 import type { RentalProperty } from "../shared/rentals.js"
 import { rentalRegionSql } from "./rental-region.js"
+import { calculateHourlyRentalPrice, rentalHours } from "./rental-utils.js"
 export const rid = () => randomUUID()
 export const rentalFail = (status: number, message: string) =>
   Object.assign(new Error(message), { status })
@@ -38,6 +39,7 @@ export async function rentalTransaction<T>(
 export {
   rentalDates,
   calculateRentalPrice,
+  rentalHours,
   verifyRentalSignature,
   rentalEmail,
   razorpay,
@@ -86,7 +88,10 @@ export async function quoteRental(
   checkIn: string,
   checkOut: string,
   code = "",
-  db: Pick<PoolClient, "query"> = pool
+  db: Pick<PoolClient, "query"> = pool,
+  bookingType: "OVERNIGHT" | "HOURLY" = "OVERNIGHT",
+  arrivalTime = "10:00",
+  departureTime = "13:00"
 ) {
   const nights = rentalDates(checkIn, checkOut)
   const settings = await rq(
@@ -106,6 +111,16 @@ export async function quoteRental(
     )
     if (!coupon) throw rentalFail(400, "This promotion is not available.")
     percent = Math.max(percent, coupon.percent)
+  }
+  if (bookingType === "HOURLY") {
+    if (nights !== 1) throw rentalFail(400, "Hourly bookings are for one day only.")
+    return calculateHourlyRentalPrice(
+      rentalHours(arrivalTime, departureTime, checkIn),
+      property.cleaningFee,
+      config.platformFeeBps ?? 500,
+      config.taxBps ?? 0,
+      percent
+    )
   }
   return calculateRentalPrice(
     property.nightlyRate,

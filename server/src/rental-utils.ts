@@ -1,6 +1,7 @@
 import type { Document } from "mongodb"
 import { createHmac, timingSafeEqual } from "node:crypto"
 import { rentalFail } from "./rental-errors.js"
+import { RENTAL_HOURLY_RATE } from "../shared/rentals.js"
 export function rentalDates(
   checkIn: string,
   checkOut: string,
@@ -61,6 +62,72 @@ export function calculateRentalPrice(
     total,
     currency: "INR",
   }
+}
+export function calculateHourlyRentalPrice(
+  hours: number,
+  cleaning: number,
+  feeBps: number,
+  taxBps: number,
+  discountPercent = 0
+) {
+  const values = [hours, cleaning, feeBps, taxBps, discountPercent]
+  if (
+    values.some((x) => !Number.isSafeInteger(x) || x < 0) ||
+    hours < 3 || hours > 12 ||
+    discountPercent > 50 || feeBps > 3000 || taxBps > 4000
+  ) throw rentalFail(400, "Hourly bookings require 3–12 whole hours.")
+  const hourlyRate = RENTAL_HOURLY_RATE
+  const nightlySubtotal = hourlyRate * hours
+  const discount = Math.floor((nightlySubtotal * discountPercent) / 100)
+  const platformFee = Math.round(((nightlySubtotal - discount) * feeBps) / 10000)
+  const tax = Math.round(((nightlySubtotal - discount + cleaning + platformFee) * taxBps) / 10000)
+  const total = nightlySubtotal - discount + cleaning + platformFee + tax
+  if (!Number.isSafeInteger(total) || total > 2000000000)
+    throw rentalFail(400, "This booking exceeds the supported amount.")
+  return {
+    nights: 0,
+    durationHours: hours,
+    hourlyRate,
+    nightlySubtotal,
+    cleaningFee: cleaning,
+    platformFee,
+    tax,
+    discount,
+    total,
+    currency: "INR",
+  }
+}
+export function rentalHours(arrivalTime: string, departureTime: string, checkIn?: string) {
+  const valid = (value: string) => /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)
+  if (!valid(arrivalTime) || !valid(departureTime))
+    throw rentalFail(400, "Choose valid arrival and departure times.")
+  const minutes = (value: string) => Number(value.slice(0, 2)) * 60 + Number(value.slice(3))
+  const duration = (minutes(departureTime) - minutes(arrivalTime)) / 60
+  if (!Number.isInteger(duration) || duration < 3 || duration > 12)
+    throw rentalFail(400, "Choose a 3–12 hour booking on the same day.")
+  if (checkIn) {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date())
+    const todayInIndia = `${parts.find((part) => part.type === "year")?.value}-${parts.find((part) => part.type === "month")?.value}-${parts.find((part) => part.type === "day")?.value}`
+    if (checkIn < todayInIndia)
+      throw rentalFail(400, "Hourly bookings must start today or later.")
+    if (checkIn === todayInIndia) {
+      const nowParts = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Asia/Kolkata",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      }).formatToParts(new Date())
+      const currentMinutes = Number(nowParts.find((part) => part.type === "hour")?.value) * 60 + Number(nowParts.find((part) => part.type === "minute")?.value)
+      if (minutes(arrivalTime) <= currentMinutes)
+        throw rentalFail(400, "Choose an arrival time later than the current time in India.")
+    }
+  }
+  return duration
 }
 export function verifyRentalSignature(
   message: string | Buffer,

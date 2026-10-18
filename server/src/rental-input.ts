@@ -10,6 +10,9 @@ const coordinate = (min: number, max: number) =>
 export const dateInput = z.object({
   checkIn: z.string(),
   checkOut: z.string(),
+  bookingType: z.enum(["OVERNIGHT", "HOURLY"]).default("OVERNIGHT"),
+  arrivalTime: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/).default("10:00"),
+  departureTime: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/).default("13:00"),
   guests: z.coerce.number().int().min(1).max(30),
   coupon: z.string().max(50).default(""),
 })

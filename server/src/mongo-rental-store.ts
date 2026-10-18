@@ -3,8 +3,10 @@ import type { ClientSession, Document, Filter } from "mongodb"
 import { mongo, mongoClient } from "./db.js"
 import { rentalFail as fail } from "./rental-errors.js"
 import {
+  calculateHourlyRentalPrice,
   calculateRentalPrice,
   rentalDates,
+  rentalHours,
   rentalEmail,
 } from "./rental-utils.js"
 import { rentalCategories } from "../shared/rentals.js"
@@ -439,7 +441,10 @@ export async function quote(
   checkIn: string,
   checkOut: string,
   code = "",
-  session?: ClientSession
+  session?: ClientSession,
+  bookingType: "OVERNIGHT" | "HOURLY" = "OVERNIGHT",
+  arrivalTime = "10:00",
+  departureTime = "13:00"
 ) {
   const nights = rentalDates(checkIn, checkOut)
   const rows = await collection("Setting").find({}, options(session)).toArray()
@@ -456,6 +461,16 @@ export async function quote(
     )
     if (!coupon) throw fail(400, "This promotion is not available.")
     percent = Math.max(percent, coupon.percent)
+  }
+  if (bookingType === "HOURLY") {
+    if (nights !== 1) throw fail(400, "Hourly bookings are for one day only.")
+    return calculateHourlyRentalPrice(
+      rentalHours(arrivalTime, departureTime, checkIn),
+      p.cleaningFee,
+      config.platformFeeBps ?? 500,
+      config.taxBps ?? 0,
+      percent
+    )
   }
   return calculateRentalPrice(
     p.nightlyRate,

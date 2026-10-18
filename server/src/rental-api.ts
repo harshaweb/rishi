@@ -22,6 +22,7 @@ import {
   rentalTransaction as tx,
   propertySelect,
   rentalDates,
+  rentalHours,
   rentalAvailable,
   quoteRental,
   expireRentals,
@@ -95,6 +96,9 @@ const password = z.string().min(12).max(72)
 const dateInput = z.object({
   checkIn: z.string(),
   checkOut: z.string(),
+  bookingType: z.enum(["OVERNIGHT", "HOURLY"]).default("OVERNIGHT"),
+  arrivalTime: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/).default("10:00"),
+  departureTime: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/).default("13:00"),
   guests: z.coerce.number().int().min(1).max(30),
   coupon: z.string().max(50).default(""),
 })
@@ -526,7 +530,7 @@ rentalRouter.post(
     if (!p) throw fail(404, "Stay not found.")
     if (d.guests > p.capacity)
       throw fail(400, "This stay cannot accommodate that many guests.")
-    const price = await quoteRental(p, d.checkIn, d.checkOut, d.coupon)
+    const price = await quoteRental(p, d.checkIn, d.checkOut, d.coupon, undefined, d.bookingType, d.arrivalTime, d.departureTime)
     if (!(await rentalAvailable(p.id, d.checkIn, d.checkOut)))
       throw fail(409, "Those dates are no longer available.")
     res.json({ ...price, bookingMode: p.bookingMode })
@@ -566,7 +570,9 @@ rentalRouter.post(
           new Date(existing.checkIn).toISOString().slice(0, 10) !== d.checkIn ||
           new Date(existing.checkOut).toISOString().slice(0, 10) !==
             d.checkOut ||
-          existing.guests !== d.guests
+          existing.guests !== d.guests ||
+          existing.bookingType !== d.bookingType ||
+          (d.bookingType === "HOURLY" && (existing.arrivalTime !== d.arrivalTime || existing.departureTime !== d.departureTime))
         )
           throw fail(
             409,
@@ -584,14 +590,14 @@ rentalRouter.post(
           503,
           "Online payments are not configured for this stay. No booking or charge was made."
         )
-      const price = await quoteRental(p, d.checkIn, d.checkOut, d.coupon, db)
+      const price = await quoteRental(p, d.checkIn, d.checkOut, d.coupon, db, d.bookingType, d.arrivalTime, d.departureTime)
       await expireRentals(db, p.id)
       if (!(await rentalAvailable(p.id, d.checkIn, d.checkOut, db)))
         throw fail(409, "Those dates are no longer available.")
       const id = rid(),
         reference = `HV-${rid().slice(0, 8).toUpperCase()}`
       const [b] = await rq(
-        `INSERT INTO "RentalBooking" (id,reference,"propertyId","guestId","checkIn","checkOut",guests,"nightlySubtotal","cleaningFee","platformFee",tax,discount,total,"expiresAt","idempotencyKey","bookingMode",cancellation) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,now()+$14::interval,$15,$16,$17) RETURNING *`,
+        `INSERT INTO "RentalBooking" (id,reference,"propertyId","guestId","checkIn","checkOut",guests,"nightlySubtotal","cleaningFee","platformFee",tax,discount,total,"expiresAt","idempotencyKey","bookingMode",cancellation,"bookingType","durationHours","arrivalTime","departureTime") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,now()+$14::interval,$15,$16,$17,$18,$19,$20,$21) RETURNING *`,
         [
           id,
           reference,
@@ -610,6 +616,10 @@ rentalRouter.post(
           d.idempotencyKey,
           p.bookingMode,
           p.cancellation,
+          d.bookingType,
+          d.bookingType === "HOURLY" ? rentalHours(d.arrivalTime, d.departureTime, d.checkIn) : null,
+          d.bookingType === "HOURLY" ? d.arrivalTime : p.checkInTime,
+          d.bookingType === "HOURLY" ? d.departureTime : p.checkOutTime,
         ],
         db
       )

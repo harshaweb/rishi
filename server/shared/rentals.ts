@@ -91,9 +91,14 @@ export type RentalBooking = {
   slug: string
   image: string
   bookingMode: string
+  bookingType?: "OVERNIGHT" | "HOURLY"
+  durationHours?: number
+  arrivalTime?: string
+  departureTime?: string
   guestName?: string
   reviewId?: string
 }
+export const RENTAL_HOURLY_RATE = 150000
 export function rentalMoney(paise: number, currency = "INR") {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",

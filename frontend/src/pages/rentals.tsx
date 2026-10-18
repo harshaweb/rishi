@@ -67,6 +67,7 @@ import {
   rentalCategories,
   rentalAmenities,
   rentalMoney as money,
+  RENTAL_HOURLY_RATE,
   rentalDate,
   type RentalProperty,
   type RentalBooking,
@@ -1678,7 +1679,7 @@ function SearchPage() {
 }
 
 function identityBookingDraft(slug: string) {
-  const empty = { checkIn: "", checkOut: "", guests: 1, coupon: "" }
+  const empty = { checkIn: "", checkOut: "", guests: 1, coupon: "", bookingType: "OVERNIGHT" as const, arrivalTime: "10:00", departureTime: "13:00" }
   if (typeof window === "undefined") return empty
   const params = new URLSearchParams(window.location.search)
   const resume = params.has("digilocker") || params.get("booking") === "resume"
@@ -1687,6 +1688,9 @@ function identityBookingDraft(slug: string) {
     return {
       checkIn: params.get("checkIn") || "",
       checkOut: params.get("checkOut") || "",
+      bookingType: "OVERNIGHT" as const,
+      arrivalTime: "10:00",
+      departureTime: "13:00",
       guests: Number.isInteger(guests) && guests > 0 && guests <= 30 ? guests : 1,
       coupon: "",
     }
@@ -1699,6 +1703,9 @@ function identityBookingDraft(slug: string) {
     return {
       checkIn: typeof value.checkIn === "string" ? value.checkIn : "",
       checkOut: typeof value.checkOut === "string" ? value.checkOut : "",
+      bookingType: value.bookingType === "HOURLY" ? "HOURLY" as const : "OVERNIGHT" as const,
+      arrivalTime: typeof value.arrivalTime === "string" ? value.arrivalTime : "10:00",
+      departureTime: typeof value.departureTime === "string" ? value.departureTime : "13:00",
       guests:
         Number.isInteger(value.guests) && value.guests > 0 && value.guests <= 30
           ? value.guests
@@ -1749,6 +1756,9 @@ function StayPage() {
     [galleryPaused, setGalleryPaused] = useState(false),
     [checkIn, setCheckIn] = useState(draft.checkIn),
     [checkOut, setCheckOut] = useState(draft.checkOut),
+    [bookingType, setBookingType] = useState<"OVERNIGHT" | "HOURLY">(draft.bookingType),
+    [arrivalTime, setArrivalTime] = useState(draft.arrivalTime),
+    [departureTime, setDepartureTime] = useState(draft.departureTime),
     [guests, setGuests] = useState(draft.guests),
     [coupon, setCoupon] = useState(draft.coupon),
     [quote, setQuote] = useState<Record<string, number> | null>(null),
@@ -1776,6 +1786,19 @@ function StayPage() {
   const [bookingAttempted, setBookingAttempted] = useState(false)
   const [dateField, setDateField] = useState<"checkIn" | "checkOut">("checkIn")
   const blockedDates = query.data?.blocked || []
+  const toMinutes = (value: string) => Number(value.slice(0, 2)) * 60 + Number(value.slice(3))
+  const toClockValue = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`
+  const durationHours = (toMinutes(departureTime) - toMinutes(arrivalTime)) / 60
+  const earliestHourlyDeparture = toClockValue(toMinutes(arrivalTime) + 180)
+  const latestHourlyDeparture = toClockValue(Math.min(toMinutes(arrivalTime) + 720, 23 * 60))
+  function chooseHourlyArrivalTime(value: string) {
+    setArrivalTime(value)
+    if (/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) {
+      const duration = toMinutes(departureTime) - toMinutes(value)
+      if (duration < 180 || duration > 720) setDepartureTime(toClockValue(toMinutes(value) + 180))
+    }
+    clearQuote()
+  }
   function chooseArrival(date: string) {
     clearQuote()
     if (date && (date < today() || unavailableNight(date, blockedDates))) {
@@ -1783,8 +1806,9 @@ function StayPage() {
       return
     }
     setCheckIn(date)
-    if (!date || !availableStay(date, checkOut, blockedDates)) setCheckOut("")
-    setDateField(date ? "checkOut" : "checkIn")
+    if (bookingType === "HOURLY") setCheckOut(date ? nextDate(date) : "")
+    else if (!date || !availableStay(date, checkOut, blockedDates)) setCheckOut("")
+    setDateField(bookingType === "HOURLY" ? "checkIn" : date ? "checkOut" : "checkIn")
   }
   function chooseDeparture(date: string) {
     clearQuote()
@@ -1812,7 +1836,7 @@ function StayPage() {
   function saveBookingDraft() {
     try {
       sessionStorage.setItem(`omshivraj-digilocker:${slug}`, JSON.stringify({
-        checkIn, checkOut, guests, coupon, expiresAt: Date.now() + 15 * 60000,
+        checkIn, checkOut, guests, coupon, bookingType, arrivalTime, departureTime, expiresAt: Date.now() + 15 * 60000,
       }))
     } catch {
       /* Continue even when the browser disables session storage. */
@@ -1829,7 +1853,11 @@ function StayPage() {
   async function price() {
     if (!p) return
     if (!availableStay(checkIn, checkOut, blockedDates) || checkIn < today()) {
-      setError("Choose available check-in and checkout dates for a stay of 1–90 nights.")
+      setError(bookingType === "HOURLY" ? "Choose an available date for your hourly booking." : "Choose available check-in and checkout dates for a stay of 1–90 nights.")
+      return
+    }
+    if (bookingType === "HOURLY" && (!Number.isInteger(durationHours) || durationHours < 3 || durationHours > 12)) {
+      setError("Choose an hourly slot lasting 3–12 hours.")
       return
     }
     setBusy(true)
@@ -1838,7 +1866,7 @@ function StayPage() {
     try {
       const q = await rentalRequest<Record<string, number>>(
         `/properties/${p.id}/quote`,
-        { checkIn, checkOut, guests, coupon }
+        { checkIn, checkOut, guests, coupon, bookingType, arrivalTime, departureTime }
       )
       if (version === quoteVersion.current) setQuote(q)
     } catch (e) {
@@ -1881,6 +1909,9 @@ function StayPage() {
         propertyId: p.id,
         checkIn,
         checkOut,
+        bookingType,
+        arrivalTime,
+        departureTime,
         guests,
         coupon,
         idempotencyKey: bookingKey.current,
@@ -2147,11 +2178,11 @@ function StayPage() {
                 <div>
                   <b>
                     {checkIn ? rentalDate(checkIn) : "Choose check-in"}
-                    {checkOut ? ` — ${rentalDate(checkOut)}` : ""}
+                    {checkOut && bookingType === "OVERNIGHT" ? ` — ${rentalDate(checkOut)}` : ""}
                   </b>
                   <span>
-                    {checkIn && `Check-in after ${rentalTime(p.checkInTime)}`}
-                    {checkOut && ` · Checkout by ${rentalTime(p.checkOutTime)}`}
+                    {checkIn && bookingType === "HOURLY" ? `${rentalTime(arrivalTime)}–${rentalTime(departureTime)} · ${durationHours} hours` : checkIn && `Check-in after ${rentalTime(p.checkInTime)}`}
+                    {checkOut && bookingType === "OVERNIGHT" && ` · Checkout by ${rentalTime(p.checkOutTime)}`}
                   </span>
                 </div>
               </div>
@@ -2159,11 +2190,11 @@ function StayPage() {
             <RentalCalendar
               selected={checkIn}
               checkout={checkOut}
-              choosing={dateField}
-              chooseField={setDateField}
+              choosing={bookingType === "HOURLY" ? "checkIn" : dateField}
+              chooseField={(field) => setDateField(bookingType === "HOURLY" ? "checkIn" : field)}
               blocked={blockedDates}
               choose={(d) => {
-                if (dateField === "checkIn") chooseArrival(d)
+                if (bookingType === "HOURLY" || dateField === "checkIn") chooseArrival(d)
                 else chooseDeparture(d)
               }}
             />
@@ -2190,15 +2221,28 @@ function StayPage() {
           <div className="r-booking-box">
             <span className="r-stay-eyebrow">MAKE YOURSELF AT HOME</span>
             <div className="r-booking-price">
-              <b>{money(p.nightlyRate)}</b>
-              <span>night</span>
+              <b>{bookingType === "HOURLY" ? money(RENTAL_HOURLY_RATE) : money(p.nightlyRate)}</b>
+              <span>{bookingType === "HOURLY" ? "hour · 3-hour minimum" : "night"}</span>
             </div>
             <p className="r-booking-subtitle">
               Entire {p.type.toLowerCase()} · {p.city}
             </p>
+            <div className="r-booking-mode" role="group" aria-label="Booking duration">
+              <button type="button" className={bookingType === "OVERNIGHT" ? "active" : ""} aria-pressed={bookingType === "OVERNIGHT"} onClick={() => {
+                clearQuote()
+                setBookingType("OVERNIGHT")
+                if (checkOut === (checkIn ? nextDate(checkIn) : "")) setCheckOut("")
+              }}>Overnight</button>
+              <button type="button" className={bookingType === "HOURLY" ? "active" : ""} aria-pressed={bookingType === "HOURLY"} onClick={() => {
+                clearQuote()
+                setBookingType("HOURLY")
+                setDateField("checkIn")
+                setCheckOut(checkIn ? nextDate(checkIn) : "")
+              }}>By the hour</button>
+            </div>
             <div className="r-booking-inputs">
-              <label className="r-booking-date-field">
-                <span className="r-booking-field-name">Check-in</span>
+              <label className={`r-booking-date-field${bookingType === "HOURLY" ? " r-hourly-arrival-field" : ""}`}>
+                <span className="r-booking-field-name">{bookingType === "HOURLY" ? "Arrival date" : "Check-in"}</span>
                 <input
                   aria-label="Booking check-in"
                   type="date"
@@ -2207,13 +2251,21 @@ function StayPage() {
                   onInput={(e) => chooseArrival(e.currentTarget.value)}
                   onChange={(e) => chooseArrival(e.target.value)}
                 />
-                <div className="r-booking-time-row">
+                {bookingType === "HOURLY" ? <div className="r-booking-time-select"><Clock3 size={13} aria-hidden="true" /><span>Arrive</span><input aria-label="Hourly booking arrival time" type="time" step={3600} max="20:00" value={arrivalTime} onChange={(event) => chooseHourlyArrivalTime(event.target.value)} /></div> : <div className="r-booking-time-row">
                   <Clock3 size={13} aria-hidden="true" />
                   <span>After</span>
                   <time aria-label={`Check-in time ${rentalTime(p.checkInTime || "15:00")}`} dateTime={p.checkInTime || "15:00"}>{rentalTime(p.checkInTime || "15:00")}</time>
-                </div>
+                </div>}
               </label>
-              <label className="r-booking-date-field">
+              {bookingType === "HOURLY" ? <label className="r-booking-date-field r-hourly-departure-field">
+                <span className="r-booking-field-name">Departure time</span>
+                <div className="r-booking-time-select"><Clock3 size={13} aria-hidden="true" /><span>Leave</span><input aria-label="Hourly booking departure time" type="time" step={3600} min={earliestHourlyDeparture} max={latestHourlyDeparture} value={departureTime} onChange={(event) => { setDepartureTime(event.target.value); clearQuote() }} /></div>
+                <small className="r-hourly-availability-note" role="status">
+                  {Number.isInteger(durationHours) && durationHours >= 3 && durationHours <= 12
+                    ? `${durationHours} hours · ${money(RENTAL_HOURLY_RATE * durationHours)} before fees · full date reserved`
+                    : "Choose 3–12 whole hours · ₹1,500 per hour"}
+                </small>
+              </label> : <label className="r-booking-date-field">
                 <span className="r-booking-field-name">Checkout</span>
                 <input
                   aria-label="Booking checkout"
@@ -2230,7 +2282,7 @@ function StayPage() {
                   <span>By</span>
                   <time aria-label={`Checkout time ${rentalTime(p.checkOutTime || "11:00")}`} dateTime={p.checkOutTime || "11:00"}>{rentalTime(p.checkOutTime || "11:00")}</time>
                 </div>
-              </label>
+              </label>}
               <label className="r-booking-guests">
                 <span className="r-booking-field-name">Guests</span>
                 <select
@@ -2249,7 +2301,7 @@ function StayPage() {
                 </select>
               </label>
             </div>
-            <a className="r-available-dates-link" href="#stay-dates" onClick={() => setDateField(checkIn && !checkOut ? "checkOut" : "checkIn")}>
+            <a className="r-available-dates-link" href="#stay-dates" onClick={() => setDateField(bookingType === "HOURLY" ? "checkIn" : checkIn && !checkOut ? "checkOut" : "checkIn")}>
               <CalendarDays size={16} aria-hidden="true" /> View available dates
             </a>
             <details className="r-promo">
@@ -2449,7 +2501,7 @@ function StayPage() {
               <div className="r-price-breakdown">
                 <p>
                   <span>
-                    {money(p.nightlyRate)} × {quote.nights} nights
+                    {bookingType === "HOURLY" ? `${money(Number(quote.hourlyRate))} × ${quote.durationHours} hours` : `${money(p.nightlyRate)} × ${quote.nights} nights`}
                   </span>
                   <span>{money(quote.nightlySubtotal)}</span>
                 </p>
@@ -2505,10 +2557,10 @@ function StayPage() {
         <div className="r-booking-review">
           <h3>{p.title}</h3><p>{p.city} · {p.type}</p>
           <dl className="r-record">
-            <div><dt>Check-in</dt><dd>{rentalDate(checkIn)} · after {rentalTime(p.checkInTime)}</dd></div>
-            <div><dt>Checkout</dt><dd>{rentalDate(checkOut)} · before {rentalTime(p.checkOutTime)}</dd></div>
+            {bookingType === "HOURLY" ? <div><dt>Hourly stay</dt><dd>{rentalDate(checkIn)} · {rentalTime(arrivalTime)}–{rentalTime(departureTime)} ({quote.durationHours} hours)</dd></div> : <><div><dt>Check-in</dt><dd>{rentalDate(checkIn)} · after {rentalTime(p.checkInTime)}</dd></div>
+            <div><dt>Checkout</dt><dd>{rentalDate(checkOut)} · before {rentalTime(p.checkOutTime)}</dd></div></>}
             <div><dt>Guests</dt><dd>{guests}</dd></div>
-            <div><dt>{quote.nights} nights</dt><dd>{money(quote.nightlySubtotal)}</dd></div>
+            <div><dt>{bookingType === "HOURLY" ? `${quote.durationHours} hours` : `${quote.nights} nights`}</dt><dd>{money(quote.nightlySubtotal)}</dd></div>
             <div><dt>Cleaning fee</dt><dd>{money(quote.cleaningFee)}</dd></div>
             <div><dt>Service fee</dt><dd>{money(quote.platformFee)}</dd></div>
             <div><dt>Taxes</dt><dd>{money(quote.tax)}</dd></div>
@@ -2524,11 +2576,11 @@ function StayPage() {
       </RentalDialog>}
       <div className="r-mobile-booking" aria-label="Stay booking shortcut">
         <div>
-          <b>{money(p.nightlyRate)}</b>
-          <span> / night</span>
+          <b>{bookingType === "HOURLY" ? money(RENTAL_HOURLY_RATE) : money(p.nightlyRate)}</b>
+          <span> / {bookingType === "HOURLY" ? "hour" : "night"}</span>
           <small>
             {checkIn
-              ? `${rentalDate(checkIn)}${checkOut ? ` — ${rentalDate(checkOut)} · before ${rentalTime(p.checkOutTime)}` : ""} · after ${rentalTime(p.checkInTime)}`
+              ? bookingType === "HOURLY" ? `${rentalDate(checkIn)} · ${rentalTime(arrivalTime)}–${rentalTime(departureTime)}` : `${rentalDate(checkIn)}${checkOut ? ` — ${rentalDate(checkOut)} · before ${rentalTime(p.checkOutTime)}` : ""} · after ${rentalTime(p.checkInTime)}`
               : "Add dates for the total price"}
           </small>
         </div>

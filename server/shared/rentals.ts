@@ -99,6 +99,11 @@ export type RentalBooking = {
   reviewId?: string
 }
 export const RENTAL_HOURLY_RATE = 150000
+export function rentalNightlyRate(property: Pick<RentalProperty, "nightlyRate" | "capacity">, guests = 1) {
+  return guests >= 2 && property.capacity >= 2
+    ? Math.max(property.nightlyRate, 350000)
+    : property.nightlyRate
+}
 export function rentalMoney(paise: number, currency = "INR") {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",

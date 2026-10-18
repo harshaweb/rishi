@@ -10,6 +10,7 @@ import {
   rentalEmail,
 } from "./rental-utils.js"
 import { rentalCategories } from "../shared/rentals.js"
+import { rentalNightlyRate } from "../shared/rentals.js"
 import { rentalCities } from "../shared/rental-region.js"
 
 // UUID strings are deliberately preserved during migration, including foreign keys.
@@ -284,6 +285,9 @@ export async function searchProperties(
   data: {
     checkIn: string
     checkOut: string
+    guests: number
+    minPrice: number
+    maxPrice: number
     amenities: string
     rating: number
     sort: string
@@ -293,6 +297,25 @@ export async function searchProperties(
   const pipeline: Document[] = [
     ...propertyPipeline(filter, true),
     ...enrichmentPipeline(),
+    {
+      $addFields: {
+        nightlyRate: {
+          $cond: [
+            { $and: [{ $gte: [data.guests, 2] }, { $gte: ["$capacity", 2] }] },
+            { $max: ["$nightlyRate", 350000] },
+            "$nightlyRate",
+          ],
+        },
+      },
+    },
+    {
+      $match: {
+        nightlyRate: {
+          $gte: Math.round(data.minPrice * 100),
+          $lte: Math.round(data.maxPrice * 100),
+        },
+      },
+    },
   ]
   const amenities = [...new Set(data.amenities.split(",").filter(Boolean))]
   pipeline.push({
@@ -444,7 +467,8 @@ export async function quote(
   session?: ClientSession,
   bookingType: "OVERNIGHT" | "HOURLY" = "OVERNIGHT",
   arrivalTime = "10:00",
-  departureTime = "13:00"
+  departureTime = "13:00",
+  guests = 1
 ) {
   const nights = rentalDates(checkIn, checkOut)
   const rows = await collection("Setting").find({}, options(session)).toArray()
@@ -465,7 +489,7 @@ export async function quote(
   if (bookingType === "HOURLY") {
     if (nights !== 1) throw fail(400, "Hourly bookings are for one day only.")
     return calculateHourlyRentalPrice(
-      rentalHours(arrivalTime, departureTime, checkIn),
+      rentalHours(arrivalTime, departureTime),
       p.cleaningFee,
       config.platformFeeBps ?? 500,
       config.taxBps ?? 0,
@@ -473,7 +497,7 @@ export async function quote(
     )
   }
   return calculateRentalPrice(
-    p.nightlyRate,
+    rentalNightlyRate({ nightlyRate: Number(p.nightlyRate), capacity: Number(p.capacity) }, guests),
     nights,
     p.cleaningFee,
     config.platformFeeBps ?? 500,

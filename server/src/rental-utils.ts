@@ -97,7 +97,7 @@ export function calculateHourlyRentalPrice(
     currency: "INR",
   }
 }
-export function rentalHours(arrivalTime: string, departureTime: string, checkIn?: string) {
+export function rentalHours(arrivalTime: string, departureTime: string) {
   const valid = (value: string) => /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)
   if (!valid(arrivalTime) || !valid(departureTime))
     throw rentalFail(400, "Choose valid arrival and departure times.")
@@ -105,28 +105,6 @@ export function rentalHours(arrivalTime: string, departureTime: string, checkIn?
   const duration = (minutes(departureTime) - minutes(arrivalTime)) / 60
   if (!Number.isInteger(duration) || duration < 3 || duration > 12)
     throw rentalFail(400, "Choose a 3–12 hour booking on the same day.")
-  if (checkIn) {
-    const parts = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Kolkata",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).formatToParts(new Date())
-    const todayInIndia = `${parts.find((part) => part.type === "year")?.value}-${parts.find((part) => part.type === "month")?.value}-${parts.find((part) => part.type === "day")?.value}`
-    if (checkIn < todayInIndia)
-      throw rentalFail(400, "Hourly bookings must start today or later.")
-    if (checkIn === todayInIndia) {
-      const nowParts = new Intl.DateTimeFormat("en-GB", {
-        timeZone: "Asia/Kolkata",
-        hour: "2-digit",
-        minute: "2-digit",
-        hourCycle: "h23",
-      }).formatToParts(new Date())
-      const currentMinutes = Number(nowParts.find((part) => part.type === "hour")?.value) * 60 + Number(nowParts.find((part) => part.type === "minute")?.value)
-      if (minutes(arrivalTime) <= currentMinutes)
-        throw rentalFail(400, "Choose an arrival time later than the current time in India.")
-    }
-  }
   return duration
 }
 export function verifyRentalSignature(

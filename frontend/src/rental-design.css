@@ -544,6 +544,20 @@
 .r-photo-dots i.active {
   background: white;
 }
+.r-photo-dots.has-count {
+  left: auto;
+  right: 10px;
+  bottom: 10px;
+  display: block;
+  width: auto;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(20, 27, 23, .72);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+}
 .r-card-description {
   display: block;
   padding-top: 10px;

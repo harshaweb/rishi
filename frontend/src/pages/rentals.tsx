@@ -68,6 +68,7 @@ import {
   rentalAmenities,
   rentalMoney as money,
   RENTAL_HOURLY_RATE,
+  rentalNightlyRate,
   rentalDate,
   type RentalProperty,
   type RentalBooking,
@@ -166,7 +167,7 @@ function SearchBar({ compact = false }: { compact?: boolean }) {
     [checkIn, setCheckIn] = useState(params.get("checkIn") || ""),
     [checkOut, setCheckOut] = useState(params.get("checkOut") || "")
   const [adults, setAdults] = useState(
-      Number(params.get("adults") || params.get("guests") || 1)
+      Number(params.get("adults") || params.get("guests") || 2)
     ),
     [children, setChildren] = useState(Number(params.get("children") || 0)),
     [infants, setInfants] = useState(Number(params.get("infants") || 0)),
@@ -436,7 +437,7 @@ function SearchBar({ compact = false }: { compact?: boolean }) {
                 <button
                   className="r-text-button"
                   onClick={() => {
-                    setAdults(1)
+                    setAdults(2)
                     setChildren(0)
                     setInfants(0)
                     setPets(0)
@@ -706,12 +707,15 @@ export function RentalCard({ property: p, bookingQuery = "" }: { property: Renta
   const { saved, toggleSaved } = useRental()
   const [image, setImage] = useState(0),
     [busy, setBusy] = useState(false)
+  const images = propertyImages(p)
+  const cardGuests = Number(new URLSearchParams(bookingQuery).get("guests") || 2)
+  const cardRate = rentalNightlyRate(p, cardGuests)
   return (
     <article className="r-card">
       <div className="r-card-photo">
         <Link to={`/stays/${p.slug}${bookingQuery ? `?${bookingQuery}` : ""}`} aria-label={`${p.title} in ${p.city}`}>
           <img
-            src={p.images[image] || "/gallery/photo-01.jpg"}
+            src={images[image] || "/gallery/photo-01.jpg"}
             alt={`${p.type} in ${p.city}: ${p.title}`}
             loading="lazy"
           />
@@ -737,13 +741,13 @@ export function RentalCard({ property: p, bookingQuery = "" }: { property: Renta
             fill={saved.has(p.id) ? "currentColor" : "rgba(0,0,0,.35)"}
           />
         </button>
-        {p.images.length > 1 && (
+        {images.length > 1 && (
           <>
             <button
               className="r-card-arrow prev"
               aria-label={`Previous photo of ${p.title}`}
               onClick={() =>
-                setImage((image + p.images.length - 1) % p.images.length)
+                setImage((image + images.length - 1) % images.length)
               }
             >
               <ChevronLeft size={16} />
@@ -751,12 +755,12 @@ export function RentalCard({ property: p, bookingQuery = "" }: { property: Renta
             <button
               className="r-card-arrow next"
               aria-label={`Next photo of ${p.title}`}
-              onClick={() => setImage((image + 1) % p.images.length)}
+              onClick={() => setImage((image + 1) % images.length)}
             >
               <ChevronRight size={16} />
             </button>
-            <span className="r-photo-dots">
-              {p.images.map((_, i) => (
+            <span className={`r-photo-dots${images.length > 7 ? " has-count" : ""}`}>
+              {images.length > 7 ? `${image + 1} / ${images.length}` : images.map((_, i) => (
                 <i className={i === image ? "active" : ""} key={i} />
               ))}
             </span>
@@ -774,7 +778,7 @@ export function RentalCard({ property: p, bookingQuery = "" }: { property: Renta
         <p className="r-card-stay-meta">{p.type} · {p.capacity} guests</p>
         <div className="r-card-location-rate">
           <span className="r-card-city">{p.city}</span>
-          <span className="r-card-rate"><b>{money(p.nightlyRate)}</b><small> / night</small></span>
+          <span className="r-card-rate"><b>{money(cardRate)}</b><small> / night{cardGuests >= 2 ? ` · ${cardGuests} guests` : ""}</small></span>
         </div>
       </Link>
     </article>
@@ -1037,6 +1041,40 @@ function HomePhotoGallery() {
   )
 }
 
+const importedStayPhotos = [
+  { file: "20261014-181406-01.jpeg", alt: "Apartment kitchen with refrigerator and cabinets" },
+  { file: "20261014-181406-02.jpeg", alt: "Bedroom with a blue patterned bedspread" },
+  { file: "20261014-181406-03.jpeg", alt: "Living room with sofa and coffee table" },
+  { file: "20261014-181406-04.jpeg", alt: "Living room with sofa and coffee table" },
+  { file: "20261014-181406-05.jpeg", alt: "Apartment kitchen with refrigerator and cabinets" },
+  { file: "20261014-181406-06.jpeg", alt: "Bedroom with warm ceiling lights" },
+  { file: "20261014-181411-01.jpeg", alt: "Close view of a made bed" },
+  { file: "20261014-181411-02.jpeg", alt: "Bedroom with an upholstered headboard" },
+  { file: "20261014-181411-03.jpeg", alt: "Bedroom and full-length curtains" },
+  { file: "20261014-181411-04.jpeg", alt: "Kitchen with counter and refrigerator" },
+  { file: "20261014-181411-05.jpeg", alt: "Kitchen and wall mirror" },
+  { file: "20261014-181411-06.jpeg", alt: "Bathroom with sink and shower" },
+  { file: "20261014-181411-07.jpeg", alt: "Bedroom with television and curtains" },
+  { file: "20261018-124816-01.jpeg", alt: "Shower with wood-look wall tiles" },
+  { file: "20261018-124816-02.jpeg", alt: "Living room with patterned wall decor" },
+  { file: "20261018-124816-03.jpeg", alt: "Sofa seating with coffee table" },
+  { file: "20261018-124816-04.jpeg", alt: "Kitchen with warm cabinet lighting" },
+  { file: "20261018-124816-05.jpeg", alt: "Kitchen counter and refrigerator" },
+  { file: "20261018-124816-06.jpeg", alt: "Bedroom with patterned accent wall" },
+  { file: "20261018-124816-07.jpeg", alt: "Balcony seating with decorative wall art" },
+  { file: "20261018-124816-08.jpeg", alt: "View through a doorway into the bedroom" },
+  { file: "20261018-124816-09.jpeg", alt: "Bedroom and sofa seating area" },
+]
+const homeHeroPhotos = ["09", "06", "02", "03", "05", "04", "08", "07", "01"].map((number) =>
+  importedStayPhotos.find((photo) => photo.file === `20261018-124816-${number}.jpeg`)!
+)
+
+function propertyImages(property: RentalProperty) {
+  return property.slug === "delhi-apartment-2"
+    ? importedStayPhotos.map(({ file }) => `/stays/whatsapp-import/${file}`)
+    : property.images
+}
+
 function HomeFlatCatalogue({ items, loading }: { items: RentalProperty[]; loading: boolean }) {
   const [city, setCity] = useState("Delhi")
   const cities = ["Delhi", "Gurugram", "Noida", "Ghaziabad"]
@@ -1080,21 +1118,29 @@ function HomePage() {
   const more = useRentalResource<{ items: RentalProperty[] }>("/search?page=2")
   const all = Array.from(new Map([...items, ...(more.data?.items || [])].map((property) => [property.id, property])).values())
   const [category, setCategory] = useState("")
+  const [heroSlide, setHeroSlide] = useState(0)
   const [destination, setDestination] = useState("")
   const [checkIn, setCheckIn] = useState("")
   const [checkOut, setCheckOut] = useState("")
-  const [adults, setAdults] = useState(1)
+  const [adults, setAdults] = useState(2)
   const [children, setChildren] = useState(0)
   const [infants, setInfants] = useState(0)
   const [pets, setPets] = useState(0)
   const [guestPickerOpen, setGuestPickerOpen] = useState(false)
   const [searchError, setSearchError] = useState("")
   const navigate = useNavigate()
+  useEffect(() => {
+    if (homeHeroPhotos.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    const timer = window.setInterval(() => {
+      setHeroSlide((current) => (current + 1) % homeHeroPhotos.length)
+    }, 6000)
+    return () => window.clearInterval(timer)
+  }, [])
   return (
     <>
       <div className="r-container r-home">
         <div className="r-home-intro">
-          <img className="r-bloom-hero-video" src="/videos/homepage-tour-enhanced.jpg" alt="A welcoming Omshivraj stay in Delhi and NCR" fetchPriority="high" />
+          <img key={homeHeroPhotos[heroSlide].file} className="r-bloom-hero-video r-home-hero-slide" src={`/stays/whatsapp-import/${homeHeroPhotos[heroSlide].file}`} alt={homeHeroPhotos[heroSlide].alt} fetchPriority={heroSlide === 0 ? "high" : "auto"} />
           <div className="r-home-hero-content">
             <h1>Your next stay.<br />Hello, Omshivraj.</h1>
             <p>Explore flats and homes across Delhi & NCR. Choose your dates, find the right space, and request your stay.</p>
@@ -1159,7 +1205,7 @@ function HomePage() {
                   <Counter name="Infants" description="Under 2" value={infants} min={0} max={5} set={setInfants} />
                   <Counter name="Pets" description="Filter for pet-friendly stays" value={pets} min={0} max={2} set={setPets} />
                   <div className="r-bloom-guest-picker-actions">
-                    <button type="button" onClick={() => { setAdults(1); setChildren(0); setInfants(0); setPets(0) }}>Reset</button>
+                  <button type="button" onClick={() => { setAdults(2); setChildren(0); setInfants(0); setPets(0) }}>Reset</button>
                     <button type="button" onClick={() => setGuestPickerOpen(false)}>Done</button>
                   </div>
                 </div>
@@ -1499,7 +1545,7 @@ function SearchPage() {
                       <MapPin size={17} />
                       <span>
                         {p.city}
-                        <b>{money(p.nightlyRate)} / night</b>
+                        <b>{money(rentalNightlyRate(p, Number(params.get("guests") || 2)))} / night</b>
                       </span>
                       <ArrowUpRight size={16} />
                     </a>
@@ -1677,20 +1723,20 @@ function SearchPage() {
 }
 
 function identityBookingDraft(slug: string) {
-  const empty = { checkIn: "", checkOut: "", guests: 1, coupon: "", bookingType: "OVERNIGHT" as const, arrivalTime: "10:00", departureTime: "13:00" }
+  const empty = { checkIn: "", checkOut: "", guests: 2, coupon: "", bookingType: "OVERNIGHT" as const, arrivalTime: "10:00", departureTime: "13:00" }
   if (typeof window === "undefined") return empty
   const params = new URLSearchParams(window.location.search)
   const resume = params.has("digilocker") || params.get("booking") === "resume"
   if (!resume) {
-    const guests = Number(params.get("guests") || 1)
+    const guests = Number(params.get("guests") || 2)
     return {
       checkIn: params.get("checkIn") || "",
       checkOut: params.get("checkOut") || "",
+      guests: Number.isInteger(guests) && guests > 0 && guests <= 30 ? guests : 2,
+      coupon: "",
       bookingType: "OVERNIGHT" as const,
       arrivalTime: "10:00",
       departureTime: "13:00",
-      guests: Number.isInteger(guests) && guests > 0 && guests <= 30 ? guests : 1,
-      coupon: "",
     }
   }
   try {
@@ -1701,14 +1747,14 @@ function identityBookingDraft(slug: string) {
     return {
       checkIn: typeof value.checkIn === "string" ? value.checkIn : "",
       checkOut: typeof value.checkOut === "string" ? value.checkOut : "",
-      bookingType: value.bookingType === "HOURLY" ? "HOURLY" as const : "OVERNIGHT" as const,
-      arrivalTime: typeof value.arrivalTime === "string" ? value.arrivalTime : "10:00",
-      departureTime: typeof value.departureTime === "string" ? value.departureTime : "13:00",
       guests:
         Number.isInteger(value.guests) && value.guests > 0 && value.guests <= 30
           ? value.guests
-          : 1,
+          : 2,
       coupon: typeof value.coupon === "string" ? value.coupon : "",
+      bookingType: value.bookingType === "HOURLY" ? "HOURLY" as const : "OVERNIGHT" as const,
+      arrivalTime: typeof value.arrivalTime === "string" ? value.arrivalTime : "10:00",
+      departureTime: typeof value.departureTime === "string" ? value.departureTime : "13:00",
     }
   } catch {
     return empty
@@ -1769,7 +1815,7 @@ function StayPage() {
   const bookingKey = useRef("")
   const quoteVersion = useRef(0)
   const galleryOpen = gallery !== null
-  const galleryImageCount = p?.images.length ?? 0
+  const galleryImageCount = p ? propertyImages(p).length : 0
   useEffect(() => {
     if (!galleryOpen || galleryPaused || galleryImageCount < 2) return
     const timer = window.setInterval(() => {
@@ -1785,14 +1831,16 @@ function StayPage() {
   const [dateField, setDateField] = useState<"checkIn" | "checkOut">("checkIn")
   const blockedDates = query.data?.blocked || []
   const toMinutes = (value: string) => Number(value.slice(0, 2)) * 60 + Number(value.slice(3))
-  const toClockValue = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`
+  const toClockValue = (minutes: number) =>
+    `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`
   const durationHours = (toMinutes(departureTime) - toMinutes(arrivalTime)) / 60
   const maxHourlyHours = Math.min(12, Math.floor((23 * 60 - toMinutes(arrivalTime)) / 60))
   function chooseHourlyArrivalTime(value: string) {
     setArrivalTime(value)
     if (/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) {
       const duration = toMinutes(departureTime) - toMinutes(value)
-      if (duration < 180 || duration > 720) setDepartureTime(toClockValue(toMinutes(value) + 180))
+      if (duration < 3 * 60 || duration > 12 * 60)
+        setDepartureTime(toClockValue(toMinutes(value) + 3 * 60))
     }
     clearQuote()
   }
@@ -1947,6 +1995,7 @@ function StayPage() {
         <Skeletons />
       </div>
     )
+  const images = propertyImages(p)
   return (
     <div className="r-container r-detail r-detail-refined">
       <div className="r-detail-breadcrumb">
@@ -1991,7 +2040,7 @@ function StayPage() {
         </div>
       </div>
       <div className="r-property-gallery">
-        {p.images.slice(0, 5).map((src, i) => (
+        {images.slice(0, 5).map((src, i) => (
           <button
             key={i}
             onClick={() => {
@@ -2218,12 +2267,13 @@ function StayPage() {
           <div className="r-booking-box">
             <span className="r-stay-eyebrow">MAKE YOURSELF AT HOME</span>
             <div className="r-booking-price">
-              <b>{bookingType === "HOURLY" ? money(RENTAL_HOURLY_RATE) : money(p.nightlyRate)}</b>
+              <b>{bookingType === "HOURLY" ? money(RENTAL_HOURLY_RATE) : money(rentalNightlyRate(p, guests))}</b>
               <span>{bookingType === "HOURLY" ? "hour · 3-hour minimum" : "night"}</span>
             </div>
             <p className="r-booking-subtitle">
               Entire {p.type.toLowerCase()} · {p.city}
             </p>
+            {p.capacity >= 2 && p.nightlyRate <= 350000 && <p className="r-two-guest-rate">From ₹3,500 per night for 2 guests</p>}
             <div className="r-booking-mode" role="group" aria-label="Booking duration">
               <button type="button" className={bookingType === "OVERNIGHT" ? "active" : ""} aria-pressed={bookingType === "OVERNIGHT"} onClick={() => {
                 clearQuote()
@@ -2300,7 +2350,7 @@ function StayPage() {
                 </select>
               </label>
             </div>
-            <a className="r-available-dates-link" href="#stay-dates" onClick={() => setDateField(bookingType === "HOURLY" ? "checkIn" : checkIn && !checkOut ? "checkOut" : "checkIn")}>
+            <a className="r-available-dates-link" href="#stay-dates" onClick={() => setDateField(checkIn && !checkOut ? "checkOut" : "checkIn")}>
               <CalendarDays size={16} aria-hidden="true" /> View available dates
             </a>
             <details className="r-promo">
@@ -2368,7 +2418,9 @@ function StayPage() {
                     {!session
                       ? "Checking online payment availability…"
                       : !session.paymentsConfigured
-                        ? "Online payments are not available yet."
+                        ? p.bookingMode === "PAYMENT"
+                          ? "This stay requires online payment, but secure checkout is not configured. Please contact support; no charge can be made yet."
+                          : "Razorpay checkout is being set up. This stay currently accepts payment at the property."
                         : p.bookingMode === "PAYMENT"
                           ? "Pay through Razorpay. Available methods are shown at checkout."
                           : "Online payment is not offered for this flat."}
@@ -2377,7 +2429,9 @@ function StayPage() {
                 <span className="r-payment-badge">
                   {p.bookingMode === "PAYMENT" && session?.paymentsConfigured
                     ? "Selected"
-                    : "Unavailable"}
+                    : !session?.paymentsConfigured
+                      ? "Setup required"
+                      : "Not offered"}
                 </span>
               </div>
               <a className="r-payment-help" href={rentalContact.callUrl}>
@@ -2385,10 +2439,10 @@ function StayPage() {
                 <ArrowUpRight size={14} aria-hidden="true" />
               </a>
             </section>
-            {(session?.digilockerRequired || session?.digilockerConfigured) && (
+            {session && (
               <section
                 className="r-digilocker-panel"
-                aria-label="DigiLocker verification"
+                aria-label="ID verification with DigiLocker"
               >
                 <div>
                   <ShieldCheck size={20} />
@@ -2410,7 +2464,7 @@ function StayPage() {
                         ? "Account verification is required before requesting a stay."
                         : "Verify your account securely with DigiLocker."}
                     </p>
-                    {!session?.user ? (
+                    {!session.user && session.digilockerConfigured ? (
                       <Link
                         to={`/login?next=${encodeURIComponent(`/stays/${slug}`)}`}
                       >
@@ -2418,9 +2472,16 @@ function StayPage() {
                       </Link>
                     ) : !session.digilockerConfigured ? (
                       <p role="status">
-                        DigiLocker setup is in progress. Please contact support
-                        before booking.
+                        {session.digilockerRequired
+                          ? "DigiLocker verification is required before booking, but provider setup is incomplete. Please contact support."
+                          : "DigiLocker verification will be available after the provider credentials and callback are configured."}
                       </p>
+                    ) : !session.user ? (
+                      <Link
+                        to={`/login?next=${encodeURIComponent(`/stays/${slug}`)}`}
+                      >
+                        Log in to verify your account
+                      </Link>
                     ) : (
                       <>
                         <label>
@@ -2500,7 +2561,7 @@ function StayPage() {
               <div className="r-price-breakdown">
                 <p>
                   <span>
-                    {bookingType === "HOURLY" ? `${money(Number(quote.hourlyRate))} × ${quote.durationHours} hours` : `${money(p.nightlyRate)} × ${quote.nights} nights`}
+                    {bookingType === "HOURLY" ? `${money(Number(quote.hourlyRate))} × ${quote.durationHours} hours` : `${money(rentalNightlyRate(p, guests))} × ${quote.nights} nights`}
                   </span>
                   <span>{money(quote.nightlySubtotal)}</span>
                 </p>
@@ -2575,7 +2636,7 @@ function StayPage() {
       </RentalDialog>}
       <div className="r-mobile-booking" aria-label="Stay booking shortcut">
         <div>
-          <b>{bookingType === "HOURLY" ? money(RENTAL_HOURLY_RATE) : money(p.nightlyRate)}</b>
+          <b>{bookingType === "HOURLY" ? money(RENTAL_HOURLY_RATE) : money(rentalNightlyRate(p, guests))}</b>
           <span> / {bookingType === "HOURLY" ? "hour" : "night"}</span>
           <small>
             {checkIn
@@ -2726,12 +2787,12 @@ function StayPage() {
       )}
       {gallery !== null && (
         <RentalDialog
-          title={`${p.title} · ${gallery + 1} / ${p.images.length}`}
+          title={`${p.title} · ${gallery + 1} / ${images.length}`}
           close={() => setGallery(null)}
         >
           <img
             className="r-lightbox"
-            src={p.images[gallery]}
+            src={images[gallery]}
             alt={`${p.title} photo ${gallery + 1}`}
           />
           <div className="r-modal-actions">
@@ -2745,7 +2806,7 @@ function StayPage() {
             <button
               className="r-secondary"
               onClick={() =>
-                setGallery((gallery + p.images.length - 1) % p.images.length)
+                setGallery((gallery + images.length - 1) % images.length)
               }
             >
               <ChevronLeft />
@@ -2753,7 +2814,7 @@ function StayPage() {
             </button>
             <button
               className="r-secondary"
-              onClick={() => setGallery((gallery + 1) % p.images.length)}
+              onClick={() => setGallery((gallery + 1) % images.length)}
             >
               Next
               <ChevronRight />

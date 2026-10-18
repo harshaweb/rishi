@@ -590,7 +590,9 @@ function Trips({ host = false }: { host?: boolean }) {
                   <Link to={`/stays/${b.slug}`}>{b.title}</Link>
                 </h2>
                 <p>
-                  {b.city} · {b.bookingType === "HOURLY" ? `${rentalDate(b.checkIn)} · ${b.arrivalTime?.slice(0, 5)}–${b.departureTime?.slice(0, 5)}` : `${rentalDate(b.checkIn)} – ${rentalDate(b.checkOut)}`} · {b.guests} guests
+                  {b.city} · {b.bookingType === "HOURLY"
+                    ? `${rentalDate(b.checkIn)} · ${b.arrivalTime?.slice(0, 5)}–${b.departureTime?.slice(0, 5)}`
+                    : `${rentalDate(b.checkIn)} – ${rentalDate(b.checkOut)}`} · {b.guests} guests
                 </p>
                 {b.bookingType === "HOURLY" && <p>{b.durationHours} hour reservation · calendar date blocked</p>}
                 <p>
@@ -1293,7 +1295,8 @@ function Calendar() {
         )
         .map((b) => (
           <p key={b.id}>
-            {b.title}: {b.bookingType === "HOURLY" ? `${rentalDate(b.checkIn)} · ${b.durationHours}h · ${b.arrivalTime?.slice(0, 5)}–${b.departureTime?.slice(0, 5)}` : `${rentalDate(b.checkIn)} – ${rentalDate(b.checkOut)}`} · {b.status}
+            {b.title}: {rentalDate(b.checkIn)} – {rentalDate(b.checkOut)} ·{" "}
+            {b.bookingType === "HOURLY" ? `${b.durationHours}h · ${b.arrivalTime?.slice(0, 5)}–${b.departureTime?.slice(0, 5)} · ` : ""}{b.status}
           </p>
         ))}
     </>

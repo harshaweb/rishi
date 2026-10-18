@@ -15,6 +15,7 @@ import { parsePatch } from "./validation.js"
 import { rentalAmenities } from "../shared/rentals.js"
 import { rentalCity, rentalDestination } from "../shared/rental-region.js"
 import { rentalRegionSql } from "./rental-region.js"
+import { rentalHours } from "./rental-utils.js"
 import {
   rid,
   rq,
@@ -22,7 +23,6 @@ import {
   rentalTransaction as tx,
   propertySelect,
   rentalDates,
-  rentalHours,
   rentalAvailable,
   quoteRental,
   expireRentals,
@@ -450,8 +450,9 @@ rentalRouter.get(
     }
     add(`p.city ILIKE ?`, `%${rentalDestination(data.destination)}%`)
     add(`p.capacity>=?`, data.guests)
-    add(`p."nightlyRate">=?`, Math.round(data.minPrice * 100))
-    add(`p."nightlyRate"<=?`, Math.round(data.maxPrice * 100))
+    const guestRate = `(CASE WHEN ${data.guests}>=2 AND p.capacity>=2 THEN GREATEST(p."nightlyRate",350000) ELSE p."nightlyRate" END)`
+    add(`${guestRate}>=?`, Math.round(data.minPrice * 100))
+    add(`${guestRate}<=?`, Math.round(data.maxPrice * 100))
     add(`p.bedrooms>=?`, data.bedrooms)
     add(`p.beds>=?`, data.beds)
     add(`p.bathrooms>=?`, data.bathrooms)
@@ -483,8 +484,8 @@ rentalRouter.get(
     const where = clauses.join(" AND "),
       sort = {
         recommended: `p."createdAt" DESC`,
-        "price-asc": `p."nightlyRate" ASC`,
-        "price-desc": `p."nightlyRate" DESC`,
+        "price-asc": `${guestRate} ASC`,
+        "price-desc": `${guestRate} DESC`,
         rating: `rating DESC NULLS LAST`,
       }[data.sort]
     const [count] = await rq(
@@ -530,7 +531,7 @@ rentalRouter.post(
     if (!p) throw fail(404, "Stay not found.")
     if (d.guests > p.capacity)
       throw fail(400, "This stay cannot accommodate that many guests.")
-    const price = await quoteRental(p, d.checkIn, d.checkOut, d.coupon, undefined, d.bookingType, d.arrivalTime, d.departureTime)
+    const price = await quoteRental(p, d.checkIn, d.checkOut, d.coupon, undefined, d.bookingType, d.arrivalTime, d.departureTime, d.guests)
     if (!(await rentalAvailable(p.id, d.checkIn, d.checkOut)))
       throw fail(409, "Those dates are no longer available.")
     res.json({ ...price, bookingMode: p.bookingMode })
@@ -570,9 +571,9 @@ rentalRouter.post(
           new Date(existing.checkIn).toISOString().slice(0, 10) !== d.checkIn ||
           new Date(existing.checkOut).toISOString().slice(0, 10) !==
             d.checkOut ||
-          existing.guests !== d.guests ||
-          existing.bookingType !== d.bookingType ||
-          (d.bookingType === "HOURLY" && (existing.arrivalTime !== d.arrivalTime || existing.departureTime !== d.departureTime))
+          existing.guests !== d.guests
+          || existing.bookingType !== d.bookingType
+          || (d.bookingType === "HOURLY" && (existing.arrivalTime !== d.arrivalTime || existing.departureTime !== d.departureTime))
         )
           throw fail(
             409,
@@ -590,7 +591,7 @@ rentalRouter.post(
           503,
           "Online payments are not configured for this stay. No booking or charge was made."
         )
-      const price = await quoteRental(p, d.checkIn, d.checkOut, d.coupon, db, d.bookingType, d.arrivalTime, d.departureTime)
+      const price = await quoteRental(p, d.checkIn, d.checkOut, d.coupon, db, d.bookingType, d.arrivalTime, d.departureTime, d.guests)
       await expireRentals(db, p.id)
       if (!(await rentalAvailable(p.id, d.checkIn, d.checkOut, db)))
         throw fail(409, "Those dates are no longer available.")
@@ -617,7 +618,7 @@ rentalRouter.post(
           p.bookingMode,
           p.cancellation,
           d.bookingType,
-          d.bookingType === "HOURLY" ? rentalHours(d.arrivalTime, d.departureTime, d.checkIn) : null,
+          d.bookingType === "HOURLY" ? rentalHours(d.arrivalTime, d.departureTime) : null,
           d.bookingType === "HOURLY" ? d.arrivalTime : p.checkInTime,
           d.bookingType === "HOURLY" ? d.departureTime : p.checkOutTime,
         ],

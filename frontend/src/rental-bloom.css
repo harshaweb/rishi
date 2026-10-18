@@ -839,6 +839,139 @@ body:has(.rental-app) { min-width:0; }
     padding: clamp(118px, 17svh, 150px) 24px clamp(68px, 9svh, 88px);
   }
 }
+
+/* Welcome feature section */
+.r-bloom-welcome {
+  width: min(1160px, calc(100% - 64px));
+  margin: 36px auto 54px;
+  padding: clamp(28px, 5vw, 58px);
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.9fr);
+  gap: clamp(32px, 6vw, 82px);
+  border: 1px solid #e8ede6;
+  border-radius: 24px;
+  background: linear-gradient(120deg, #f4f7f2 0%, #fbfcf9 58%, #f1f5ef 100%);
+  box-shadow: 0 16px 44px #1d3b2910;
+}
+.r-bloom-welcome h2 {
+  margin: 0 0 18px;
+  color: #203c2e;
+  font-size: clamp(36px, 4.2vw, 52px);
+  font-weight: 720;
+  letter-spacing: -1.8px;
+  line-height: 1.06;
+}
+.r-bloom-welcome p {
+  max-width: 430px;
+  margin: 0 0 24px;
+  color: #5e6b61;
+  font-size: 15px;
+  line-height: 1.7;
+}
+.r-bloom-welcome .r-primary {
+  min-height: 46px;
+  gap: 12px;
+  padding-inline: 18px;
+  border: 0;
+  border-radius: 10px;
+  background: #203c2e;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 650;
+  box-shadow: 0 6px 16px #203c2e20;
+}
+.r-bloom-welcome .r-primary:hover {
+  background: #2c523d;
+  transform: translateY(-1px);
+}
+.r-bloom-welcome-photo {
+  position: relative;
+  min-height: 270px;
+  aspect-ratio: 1.38;
+  border: 1px solid #ffffffa8;
+  border-radius: 18px;
+  background: #d7dfd4;
+  box-shadow: 0 12px 30px #1d35251a;
+  isolation: isolate;
+}
+.r-bloom-welcome-photo::before {
+  position: absolute;
+  z-index: 1;
+  inset: 45% 0 0;
+  background: linear-gradient(180deg, transparent, #101c15c9);
+  content: "";
+  pointer-events: none;
+}
+.r-bloom-welcome-photo::after {
+  position: absolute;
+  z-index: 2;
+  top: 14px;
+  left: 14px;
+  padding: 7px 10px;
+  border: 1px solid #ffffff80;
+  border-radius: 999px;
+  background: #ffffffdf;
+  color: #31463a;
+  content: "A HOME THAT FEELS LIKE YOURS";
+  font: 700 8px/1 "Inter Variable", sans-serif;
+  letter-spacing: 0.09em;
+}
+.r-bloom-welcome-photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 450ms ease;
+}
+.r-bloom-welcome-photo:hover img {
+  transform: scale(1.035);
+}
+.r-bloom-welcome-photo > span {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  min-height: 72px;
+  padding: 16px 18px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+}
+.r-bloom-welcome-photo b {
+  color: #fff;
+  font-size: 21px;
+  font-weight: 700;
+}
+.r-bloom-welcome-photo > span svg {
+  margin-left: auto;
+  color: #fff;
+}
+@media (max-width: 760px) {
+  .r-bloom-welcome {
+    width: calc(100% - 36px);
+    margin: 24px auto 38px;
+    padding: 28px 22px 22px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    border-radius: 19px;
+  }
+  .r-bloom-welcome h2 {
+    margin-bottom: 14px;
+    font-size: clamp(34px, 9vw, 44px);
+    letter-spacing: -1.2px;
+  }
+  .r-bloom-welcome p {
+    margin-bottom: 19px;
+    font-size: 14px;
+  }
+  .r-bloom-welcome-photo {
+    width: 100%;
+    min-height: 0;
+    aspect-ratio: 1.45;
+    border-radius: 14px;
+  }
+}
 /* Hourly reservation controls */
 .r-booking-mode {
   display: grid;

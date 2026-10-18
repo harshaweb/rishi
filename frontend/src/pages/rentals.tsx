@@ -1768,17 +1768,17 @@ function StayPage() {
     [reportBody, setReportBody] = useState("")
   const bookingKey = useRef("")
   const quoteVersion = useRef(0)
+  const galleryOpen = gallery !== null
+  const galleryImageCount = p?.images.length ?? 0
   useEffect(() => {
-    if (gallery === null || galleryPaused || !p) return
-    const imageCount = p.images.length
-    if (imageCount < 2) return
+    if (!galleryOpen || galleryPaused || galleryImageCount < 2) return
     const timer = window.setInterval(() => {
       setGallery((current) =>
-        current === null ? null : (current + 1) % imageCount
+        current === null ? null : (current + 1) % galleryImageCount
       )
     }, 3500)
     return () => window.clearInterval(timer)
-  }, [gallery !== null, galleryPaused, p?.id])
+  }, [galleryOpen, galleryPaused, galleryImageCount])
   const [reviewBooking, setReviewBooking] = useState(false)
   const [verificationNotice, setVerificationNotice] = useState("")
   const [bookingAttempted, setBookingAttempted] = useState(false)

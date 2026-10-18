@@ -1080,7 +1080,6 @@ function HomePage() {
   const more = useRentalResource<{ items: RentalProperty[] }>("/search?page=2")
   const all = Array.from(new Map([...items, ...(more.data?.items || [])].map((property) => [property.id, property])).values())
   const [category, setCategory] = useState("")
-  const [heroPaused, setHeroPaused] = useState(false)
   const [destination, setDestination] = useState("")
   const [checkIn, setCheckIn] = useState("")
   const [checkOut, setCheckOut] = useState("")
@@ -1095,7 +1094,7 @@ function HomePage() {
     <>
       <div className="r-container r-home">
         <div className="r-home-intro">
-          <RentalVideo className="r-bloom-hero-video" label="Omshivraj property preview" source="/videos/homepage-tour-enhanced" poster="/videos/homepage-tour-enhanced.jpg" background paused={heroPaused} />
+          <img className="r-bloom-hero-video" src="/videos/homepage-tour-enhanced.jpg" alt="A welcoming Omshivraj stay in Delhi and NCR" fetchPriority="high" />
           <div className="r-home-hero-content">
             <h1>Your next stay.<br />Hello, Omshivraj.</h1>
             <p>Explore flats and homes across Delhi & NCR. Choose your dates, find the right space, and request your stay.</p>
@@ -1169,7 +1168,6 @@ function HomePage() {
             {searchError && <p className="r-bloom-search-error" role="alert">{searchError}</p>}
             <span className="r-bloom-direct"><ShieldCheck size={16} /> Direct requests. Host-confirmed stays.</span>
           </div>
-          <button className="r-hero-film-toggle" type="button" onClick={() => setHeroPaused((value) => !value)} aria-pressed={heroPaused}>{heroPaused ? "Play video" : "Pause video"}</button>
         </div>
         <section className="r-bloom-welcome">
           <div>

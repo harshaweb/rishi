@@ -1772,7 +1772,7 @@ function identityBookingDraft(slug: string) {
 function StayPage() {
   const slug = useLocation().pathname.split("/")[2],
     navigate = useNavigate(),
-    { session, notify, saved, toggleSaved, refreshSession } = useRental()
+    { session, sessionError, notify, saved, toggleSaved, refreshSession } = useRental()
   const { content } = useContent()
   const query = useRentalResource<
     RentalProperty & {
@@ -2416,28 +2416,35 @@ function StayPage() {
               </div>
               <div
                 className={`r-payment-method ${p.bookingMode === "PAYMENT" && session?.paymentsConfigured ? "is-selected" : "is-unavailable"}`}
+                aria-live="polite"
               >
                 <CreditCard size={21} aria-hidden="true" />
                 <div>
                   <b>Secure online payment</b>
                   <p>
                     {!session
-                      ? "Checking online payment availability…"
+                      ? sessionError
+                        ? `Could not check online payment status. Refresh the page and try again. ${sessionError}`
+                        : "Checking online payment availability…"
                       : !session.paymentsConfigured
                         ? p.bookingMode === "PAYMENT"
-                          ? "This stay requires online payment, but secure checkout is not configured. Please contact support; no charge can be made yet."
-                          : "Razorpay checkout is being set up. This stay currently accepts payment at the property."
+                          ? "Online checkout is not configured yet. The site administrator must add Razorpay credentials on the server before this stay can accept payment. No charge can be made yet."
+                          : "Online checkout is not configured yet. This stay uses host approval, with payment due at the property after confirmation."
                         : p.bookingMode === "PAYMENT"
                           ? "Choose how you want to pay. Your selected option opens in secure Razorpay checkout."
-                          : "Online payment is not offered for this flat."}
+                          : "Online payment is not offered for this stay. Pay at the property after host confirmation."}
                   </p>
                 </div>
                 <span className="r-payment-badge">
-                  {p.bookingMode === "PAYMENT" && session?.paymentsConfigured
-                    ? "Selected"
-                    : !session?.paymentsConfigured
-                      ? "Setup required"
-                      : "Not offered"}
+                  {p.bookingMode !== "PAYMENT"
+                    ? "Not offered"
+                    : session?.paymentsConfigured
+                      ? "Selected"
+                      : sessionError
+                        ? "Status unavailable"
+                        : session
+                          ? "Setup required"
+                          : "Checking"}
                 </span>
               </div>
               {p.bookingMode === "PAYMENT" && session?.paymentsConfigured && (

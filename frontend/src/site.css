@@ -5171,6 +5171,35 @@ td small {
   font-weight: 650;
   font-size: 13px;
 }
+.whatsapp-chat-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 90px;
+  z-index: 59;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 0 17px;
+  border-radius: 999px;
+  background: #168b51;
+  color: #fff;
+  box-shadow: 0 8px 28px #12613b40;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background .2s ease, transform .2s ease;
+}
+.whatsapp-chat-fab:hover {
+  background: #0f7241;
+  color: #fff;
+  transform: translateY(-2px);
+}
+.whatsapp-chat-fab:focus-visible {
+  outline: 3px solid #a9f2c7;
+  outline-offset: 3px;
+}
 .contact-widget-panel {
   width: 330px;
   max-width: calc(100vw - 32px);
@@ -5239,6 +5268,10 @@ td small {
   .contact-widget {
     right: 16px;
     bottom: 16px;
+  }
+  .whatsapp-chat-fab {
+    right: 16px;
+    bottom: 82px;
   }
 }
 @media (max-width: 480px) {

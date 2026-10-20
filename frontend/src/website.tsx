@@ -14,7 +14,7 @@ import type { Content } from "../../server/shared/content"
 import { pageMetadata } from "../../server/shared/seo"
 import { CookieChoice, Footer, Header } from "./components/layout"
 import { Home } from "./pages/home"
-import { ContactWidget } from "./components/engagement"
+import { ContactWidget, WhatsAppChat } from "./components/engagement"
 const VisionMission = lazy(() =>
   import("./pages/engagement").then((m) => ({ default: m.VisionMission }))
 )
@@ -107,7 +107,7 @@ function Metadata() {
 function Site() {
   const { pathname } = useLocation()
   const { content } = useContent()
-  if (isRentalPath(pathname)) return <><Metadata /><RentalApp /></>
+  if (isRentalPath(pathname)) return <><Metadata /><RentalApp /><WhatsAppChat /></>
   if (pathname.startsWith("/admin"))
     return (
       <>
@@ -173,6 +173,7 @@ function Site() {
       <Footer />
       <CookieChoice />
       <ContactWidget key={`contact-widget:${pathname}`} />
+      <WhatsAppChat />
     </>
   )
 }

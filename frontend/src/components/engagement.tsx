@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react"
 import { configuredVideos, whatsappUrl } from "../../../server/shared/engagement"
+import { bookingWhatsAppLink } from "../../../server/shared/rental-contact"
 import { useContent } from "../lib/content"
 import { useSectionCopy } from "./managed-section"
 import { ButtonLink, Eyebrow } from "./ui"
@@ -258,5 +259,22 @@ export function ContactWidget() {
         <span>{open ? "Close contact" : "Let’s talk"}</span>
       </button>
     </aside>
+  )
+}
+
+export function WhatsAppChat() {
+  const message = "Hi! I have a question about a stay or booking."
+  return (
+    <a
+      className="whatsapp-chat-fab"
+      href={bookingWhatsAppLink(message)}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Chat with us on WhatsApp"
+      title="Chat with us on WhatsApp"
+    >
+      <MessageCircle size={22} aria-hidden="true" />
+      <span>WhatsApp</span>
+    </a>
   )
 }

@@ -1433,6 +1433,9 @@ r.post(
   "/bookings/:id/pay",
   signed,
   wrap(async (req, res) => {
+    const { method } = z
+      .object({ method: z.enum(["upi", "card", "netbanking"]).default("upi") })
+      .parse(req.body || {})
     const b = await c("Booking").findOne({
       id: param(req),
       guestId: uid(req),
@@ -1451,6 +1454,7 @@ r.post(
       const row = record({
         bookingId: b.id,
         amount: b.total,
+        requestedMethod: method,
         status: "CREATING",
       })
       try {
@@ -1483,6 +1487,12 @@ r.post(
           throw error
         }
       }
+    }
+    if (payment && payment.status !== "CAPTURED") {
+      await c("Payment").updateOne(
+        { _id: payment._id, status: { $ne: "CAPTURED" } },
+        { $set: { requestedMethod: method } }
+      )
     }
     if (!payment?.orderId)
       throw fail(
@@ -1533,7 +1543,7 @@ export async function settleMongoPayment(orderId: string, paymentId: string) {
     }
     await c("Payment").updateOne(
       { _id: payment._id },
-      { $set: { paymentId, status: "CAPTURED" } },
+      { $set: { paymentId, method: provider.method, status: "CAPTURED" } },
       options(session)
     )
     const late =

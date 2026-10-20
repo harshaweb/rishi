@@ -1,4 +1,4 @@
-import { rentalCheckout } from "../lib/rental-checkout"
+import { rentalCheckout, type RentalPaymentMethod } from "../lib/rental-checkout"
 import { useEffect, useState, type FormEvent, type ReactNode } from "react"
 import {
   Link,
@@ -574,6 +574,7 @@ function Trips({ host = false }: { host?: boolean }) {
     { notify } = useRental()
   const [filter, setFilter] = useState("ALL"),
     [paying, setPaying] = useState<string | null>(null),
+    [paymentMethods, setPaymentMethods] = useState<Record<string, RentalPaymentMethod>>({}),
     [cancel, setCancel] = useState<RentalBooking | null>(null),
     [review, setReview] = useState<RentalBooking | null>(null)
   async function act(path: string, body?: unknown) {
@@ -651,6 +652,24 @@ function Trips({ host = false }: { host?: boolean }) {
                   {b.status === "PENDING" &&
                     !host &&
                     b.bookingMode === "PAYMENT" && (
+                      <>
+                      <label className="r-trip-payment-method">
+                        Payment method
+                        <select
+                          aria-label={`Payment method for ${b.reference}`}
+                          value={paymentMethods[b.id] || "upi"}
+                          onChange={(event) =>
+                            setPaymentMethods((current) => ({
+                              ...current,
+                              [b.id]: event.target.value as RentalPaymentMethod,
+                            }))
+                          }
+                        >
+                          <option value="upi">PhonePe / UPI</option>
+                          <option value="card">Debit or credit card</option>
+                          <option value="netbanking">Net banking</option>
+                        </select>
+                      </label>
                       <button
                         className="r-primary"
                         disabled={paying !== null}
@@ -658,7 +677,12 @@ function Trips({ host = false }: { host?: boolean }) {
                         onClick={async () => {
                           setPaying(b.id)
                           try {
-                            await rentalCheckout(b, q.refresh, notify)
+                            await rentalCheckout(
+                              b,
+                              q.refresh,
+                              notify,
+                              paymentMethods[b.id] || "upi"
+                            )
                           } finally {
                             setPaying(null)
                           }
@@ -668,6 +692,7 @@ function Trips({ host = false }: { host?: boolean }) {
                           ? "Opening secure checkout…"
                           : `Pay ${money(b.total)} securely`}
                       </button>
+                      </>
                     )}
                   {["PENDING", "CONFIRMED"].includes(b.status) && (
                     <button

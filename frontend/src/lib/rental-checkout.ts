@@ -9,6 +9,13 @@ type CheckoutOptions = {
   name: string
   description: string
   theme: { color: string }
+  config: {
+    display: {
+      blocks: Record<string, { name: string; instruments: { method: string }[] }>
+      sequence: string[]
+      preferences: { show_default_blocks: boolean }
+    }
+  }
   handler: (data: {
     razorpay_payment_id: string
     razorpay_order_id: string
@@ -16,6 +23,7 @@ type CheckoutOptions = {
   }) => void
   modal: { ondismiss: () => void }
 }
+export type RentalPaymentMethod = "upi" | "card" | "netbanking"
 declare global {
   interface Window {
     Razorpay?: new (options: CheckoutOptions) => {
@@ -58,7 +66,8 @@ function loadCheckout() {
 export async function rentalCheckout(
   booking: RentalBooking,
   refresh: () => void,
-  notify: (message: string) => void
+  notify: (message: string) => void,
+  method: RentalPaymentMethod = "upi"
 ) {
   try {
     await loadCheckout()
@@ -67,7 +76,7 @@ export async function rentalCheckout(
       amount: number
       currency: string
       key: string
-    }>(`/bookings/${booking.id}/pay`)
+    }>(`/bookings/${booking.id}/pay`, { method })
     await new Promise<void>((resolve, reject) => {
       let verifying = false
       const widget = new window.Razorpay!({
@@ -78,6 +87,23 @@ export async function rentalCheckout(
         name: "Omshivraj",
         description: `Reservation ${booking.reference}`,
         theme: { color: "#e31c5f" },
+        config: {
+          display: {
+            blocks: {
+              selected: {
+                name:
+                  method === "upi"
+                    ? "PhonePe / UPI apps"
+                    : method === "card"
+                      ? "Debit or credit card"
+                      : "Net banking",
+                instruments: [{ method }],
+              },
+            },
+            sequence: ["block.selected"],
+            preferences: { show_default_blocks: false },
+          },
+        },
         handler: async (data) => {
           verifying = true
           notify("Checking your payment with the provider…")

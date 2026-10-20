@@ -1,4 +1,5 @@
 import { rentalCheckout } from "../lib/rental-checkout"
+import type { RentalPaymentMethod } from "../lib/rental-checkout"
 import { RentalCalendar } from "../components/rental-calendar"
 import { availableStay, unavailableNight } from "../lib/stay-dates"
 import { newOwnerPhotos } from "../lib/uploaded-photos"
@@ -1834,6 +1835,7 @@ function StayPage() {
     return () => window.clearInterval(timer)
   }, [galleryOpen, galleryPaused, galleryImageCount])
   const [reviewBooking, setReviewBooking] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<RentalPaymentMethod>("upi")
   const [verificationNotice, setVerificationNotice] = useState("")
   const [bookingAttempted, setBookingAttempted] = useState(false)
   const [dateField, setDateField] = useState<"checkIn" | "checkOut">("checkIn")
@@ -1979,7 +1981,7 @@ function StayPage() {
         `Request ${booking.reference} saved. ${p.bookingMode === "HOST_APPROVAL" ? "Awaiting host approval." : "Complete payment to confirm."}`
       )
       if (p.bookingMode === "PAYMENT") {
-        await rentalCheckout(booking, () => {}, notify)
+        await rentalCheckout(booking, () => {}, notify, paymentMethod)
       }
       navigate("/trips")
     } catch (e) {
@@ -2430,7 +2432,7 @@ function StayPage() {
                           ? "This stay requires online payment, but secure checkout is not configured. Please contact support; no charge can be made yet."
                           : "Razorpay checkout is being set up. This stay currently accepts payment at the property."
                         : p.bookingMode === "PAYMENT"
-                          ? "Pay through Razorpay. Available methods are shown at checkout."
+                          ? "Choose how you want to pay. Your selected option opens in secure Razorpay checkout."
                           : "Online payment is not offered for this flat."}
                   </p>
                 </div>
@@ -2442,6 +2444,39 @@ function StayPage() {
                       : "Not offered"}
                 </span>
               </div>
+              {p.bookingMode === "PAYMENT" && session?.paymentsConfigured && (
+                <div
+                  className="r-payment-choices"
+                  role="radiogroup"
+                  aria-label="Choose online payment method"
+                >
+                  {([
+                    ["upi", "PhonePe / UPI", "Pay with PhonePe or another available UPI app"],
+                    ["card", "Debit or credit card", "Visa, Mastercard, RuPay and other enabled cards"],
+                    ["netbanking", "Net banking", "Pay from your bank account"],
+                  ] as const).map(([method, label, description]) => (
+                    <label
+                      className={`r-payment-choice ${paymentMethod === method ? "is-selected" : ""}`}
+                      key={method}
+                    >
+                      <input
+                        type="radio"
+                        name="stay-payment-method"
+                        value={method}
+                        checked={paymentMethod === method}
+                        onChange={() => setPaymentMethod(method)}
+                      />
+                      <span>
+                        <b>{label}</b>
+                        <small>{description}</small>
+                      </span>
+                    </label>
+                  ))}
+                  <p className="r-payment-method-note">
+                    PhonePe is offered through UPI when it is enabled for this Razorpay account.
+                  </p>
+                </div>
+              )}
               <a className="r-payment-help" href={rentalContact.callUrl}>
                 Questions about payment? Call us{" "}
                 <ArrowUpRight size={14} aria-hidden="true" />
@@ -2636,7 +2671,7 @@ function StayPage() {
             <div><dt>Total · INR</dt><dd><strong>{money(quote.total)}</strong></dd></div>
             <div><dt>Cancellation policy</dt><dd>{p.cancellation.toLowerCase()} · <Link to="/cancellation-policy" target="_blank" rel="noopener noreferrer">Read cancellation terms</Link></dd></div>
           </dl>
-          <p>{p.bookingMode === "HOST_APPROVAL" ? "This is a booking request. Your host or an administrator must confirm it within 48 hours. Payment is due at the property after confirmation." : "Your dates are held for 20 minutes. Complete Razorpay payment to confirm your booking."}</p>
+          <p>{p.bookingMode === "HOST_APPROVAL" ? "This is a booking request. Your host or an administrator must confirm it within 48 hours. Payment is due at the property after confirmation." : `Your dates are held for 20 minutes. Pay by ${paymentMethod === "upi" ? "PhonePe / UPI" : paymentMethod === "card" ? "card" : "net banking"} in secure checkout to confirm your booking.`}</p>
           <p>Availability and the total price are checked again when you confirm.</p>
           <button className="r-primary r-full" disabled={busy} onClick={reserve}>{busy ? "Saving your request…" : p.bookingMode === "HOST_APPROVAL" ? "Confirm booking request" : "Continue to secure payment"}</button>
           <button className="r-text-button" disabled={busy} onClick={() => setReviewBooking(false)}>Back to dates</button>

@@ -1847,6 +1847,62 @@ r.get(
     res.json({ items: result?.items || [], total: result?.total || 0, page, pageSize: 30 })
   })
 )
+r.post(
+  "/admin/bookings/:id/confirm",
+  wrap(async (req, res) => {
+    const booking = await tx(async (session) => {
+      const initial = await c("Booking").findOne(
+        { id: param(req) },
+        options(session)
+      )
+      if (!initial) throw fail(404, "Reservation not found.")
+      await lockProperty(initial.propertyId, session)
+      await expire(initial.propertyId, session)
+      const currentBooking = await c("Booking").findOne(
+        { id: initial.id },
+        options(session)
+      )
+      if (!currentBooking || currentBooking.status !== "PENDING")
+        throw fail(409, "Only a pending reservation can be confirmed.")
+      if (
+        !currentBooking.expiresAt ||
+        new Date(currentBooking.expiresAt).getTime() <= Date.now()
+      )
+        throw fail(409, "This reservation hold has expired.")
+      const payment = await c("Payment").findOne(
+        { bookingId: currentBooking.id },
+        options(session)
+      )
+      if (payment?.status === "CAPTURED")
+        throw fail(
+          409,
+          "A captured payment needs reconciliation before this reservation can be confirmed manually."
+        )
+      const fields = {
+        status: "CONFIRMED",
+        paymentStatus: "PAY_AT_PROPERTY",
+        expiresAt: null,
+      }
+      await c("Booking").updateOne(
+        { id: currentBooking.id },
+        { $set: fields },
+        options(session)
+      )
+      await audit(uid(req), "ADMIN_CONFIRMED", currentBooking.id!, session)
+      return {
+        booking: { ...currentBooking, ...fields },
+        guestId: currentBooking.guestId,
+        reference: currentBooking.reference,
+      }
+    })
+    await notify(
+      booking.guestId,
+      `Your stay ${booking.reference} is confirmed by the administrator. Payment is due at the property.`,
+      "/trips"
+    )
+    res.json(clean(booking.booking))
+  })
+)
 r.get(
   "/admin/:entity",
   wrap(async (req, res) => {

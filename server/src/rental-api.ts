@@ -1640,6 +1640,65 @@ rentalRouter.get(
     res.json({ items, total: count.total, page, pageSize: 30 })
   })
 )
+rentalRouter.post(
+  "/admin/bookings/:id/confirm",
+  wrap(async (req, res) => {
+    const booking = await tx(async (db) => {
+      const [initial] = await rq(
+        `SELECT * FROM "RentalBooking" WHERE id=$1`,
+        [req.params.id],
+        db
+      )
+      if (!initial) throw fail(404, "Reservation not found.")
+      await rq(
+        `SELECT id FROM "RentalProperty" WHERE id=$1 FOR UPDATE`,
+        [initial.propertyId],
+        db
+      )
+      await expireRentals(db, initial.propertyId)
+      const [currentBooking] = await rq(
+        `SELECT * FROM "RentalBooking" WHERE id=$1 FOR UPDATE`,
+        [initial.id],
+        db
+      )
+      if (!currentBooking || currentBooking.status !== "PENDING")
+        throw fail(409, "Only a pending reservation can be confirmed.")
+      if (
+        !currentBooking.expiresAt ||
+        new Date(currentBooking.expiresAt).getTime() <= Date.now()
+      )
+        throw fail(409, "This reservation hold has expired.")
+      const [captured] = await rq(
+        `SELECT id FROM "RentalPayment" WHERE "bookingId"=$1 AND status='CAPTURED'`,
+        [currentBooking.id],
+        db
+      )
+      if (captured)
+        throw fail(
+          409,
+          "A captured payment needs reconciliation before this reservation can be confirmed manually."
+        )
+      await rq(
+        `UPDATE "RentalBooking" SET status='CONFIRMED',"paymentStatus"='PAY_AT_PROPERTY',"expiresAt"=NULL WHERE id=$1`,
+        [currentBooking.id],
+        db
+      )
+      await rentalAudit(
+        req.rentalUser!.id,
+        "ADMIN_CONFIRMED",
+        currentBooking.id,
+        db
+      )
+      return currentBooking
+    })
+    await rentalNotify(
+      booking.guestId,
+      `Your stay ${booking.reference} is confirmed by the administrator. Payment is due at the property.`,
+      "/trips"
+    )
+    res.json({ status: "CONFIRMED", paymentStatus: "PAY_AT_PROPERTY" })
+  })
+)
 rentalRouter.patch(
   "/admin/users/:id",
   wrap(async (req, res) => {

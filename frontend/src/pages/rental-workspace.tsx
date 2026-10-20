@@ -2445,12 +2445,20 @@ function Admin() {
                   </button>
                 </>
               )}
-              {entity === "bookings" &&
-                selected.status === "PENDING" && selected.bookingMode === "HOST_APPROVAL" && (
-                  <Form label="Confirm reservation" submit={async () => act(`/host/reservations/${selected.id}/accept`, {})}>
-                    <p>Confirm this request and reserve its dates. The guest will pay at the property.</p>
-                  </Form>
-                )}
+              {entity === "bookings" && selected.status === "PENDING" && (
+                <Form
+                  label="Confirm reservation"
+                  submit={async () =>
+                    act(`/admin/bookings/${selected.id}/confirm`, {})
+                  }
+                >
+                  <p>
+                    Confirm this pending reservation. The guest will pay at the
+                    property; any captured online payment must be reconciled
+                    separately.
+                  </p>
+                </Form>
+              )}
               {entity === "bookings" &&
                 ["PENDING", "CONFIRMED"].includes(String(selected.status)) && (
                   <Form

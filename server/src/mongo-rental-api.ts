@@ -1446,10 +1446,7 @@ r.post(
       expiresAt: { $gt: new Date() },
     })
     if (!b) throw fail(409, "This reservation cannot start a payment.")
-    if (
-      demoPaymentsEnabled() &&
-      !(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET)
-    ) {
+    if (demoPaymentsEnabled()) {
       let payment = await c("Payment").findOne({ bookingId: b.id })
       if (payment && payment.provider !== "DEMO")
         throw fail(409, "A real payment order already exists for this reservation.")

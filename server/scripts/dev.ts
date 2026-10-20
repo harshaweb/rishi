@@ -71,11 +71,15 @@ try {
   if (!initialized && !isMongo) await run(["--import", "tsx", "server/prisma/seed.ts"])
   if (isMongo) await (await import("../src/mongo-rental-store.js")).initializeRentals()
   await run(["--watch", "--import", "tsx", "server/src/index.ts"], false)
-  await run(
-    [resolve("node_modules/vite/bin/vite.js"), "--config", "frontend/vite.config.ts", "--host", "127.0.0.1"],
-    false
-  )
-  console.log("Harshaweb development starting: http://localhost:5173")
+  if (process.env.LOCAL_API_ONLY !== "1") {
+    await run(
+      [resolve("node_modules/vite/bin/vite.js"), "--config", "frontend/vite.config.ts", "--host", "127.0.0.1"],
+      false
+    )
+    console.log("Harshaweb development starting: http://localhost:5173")
+  } else {
+    console.log("Harshaweb API starting on port 3001 (using the existing frontend).")
+  }
   for (const child of children.slice(-2))
     child.on("exit", () => {
       if (!stopping) void stop()

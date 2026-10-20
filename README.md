@@ -31,6 +31,8 @@ Frontend: http://localhost:5173 · API: http://localhost:3001
 
 For isolated local development without Atlas access, run `npm run dev:local`. This starts a persistent MongoDB replica set on loopback port 27018, preserving data in ignored `.data/mongodb`. It does not modify the Atlas URL in `.env`. If the previous local PostgreSQL database is explicitly configured, its records are copied once/idempotently without deleting or overwriting either database. Existing local account passwords are retained. PostgreSQL compatibility code remains available during migration; it is not used for MongoDB requests.
 
+If the frontend is already running on port 5173, start only the local database and API with `LOCAL_API_ONLY=1 npm run dev:local` (PowerShell: `$env:LOCAL_API_ONLY='1'; npm run dev:local`). The existing Vite server can then proxy its `/api` requests to port 3001 without a port conflict.
+
 MongoDB must be an Atlas cluster or replica set: booking inventory relies on transactions. If Atlas cannot connect, verify cluster status, database-user permissions, Network Access rules and the full URI. Never disable TLS validation.
 
 ## Admin

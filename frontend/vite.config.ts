@@ -1,7 +1,10 @@
+import { realpathSync } from "node:fs"
 import { resolve } from "node:path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
+
+const nodeModules = resolve(import.meta.dirname, "../node_modules")
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -15,7 +18,8 @@ export default defineConfig({
     fs: {
       allow: [
         resolve(import.meta.dirname),
-        resolve(import.meta.dirname, "../node_modules"),
+        nodeModules,
+        realpathSync(nodeModules),
         resolve(import.meta.dirname, "../server/shared"),
       ],
     },

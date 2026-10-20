@@ -2431,7 +2431,9 @@ function StayPage() {
                           ? "Online checkout is not configured yet. The site administrator must add Razorpay credentials on the server before this stay can accept payment. No charge can be made yet."
                           : "Online checkout is not configured yet. This stay uses host approval, with payment due at the property after confirmation."
                         : p.bookingMode === "PAYMENT"
-                          ? "Choose how you want to pay. Your selected option opens in secure Razorpay checkout."
+                          ? session.demoPayments
+                            ? "Local demo checkout is active. Simulate success or failure for PhonePe / UPI, card, or net banking; no money is charged."
+                            : "Choose how you want to pay. Your selected option opens in secure Razorpay checkout."
                           : "Online payment is not offered for this stay. Pay at the property after host confirmation."}
                   </p>
                 </div>
@@ -2439,7 +2441,9 @@ function StayPage() {
                   {p.bookingMode !== "PAYMENT"
                     ? "Not offered"
                     : session?.paymentsConfigured
-                      ? "Selected"
+                      ? session.demoPayments && p.bookingMode === "PAYMENT"
+                        ? "Demo"
+                        : "Selected"
                       : sessionError
                         ? "Status unavailable"
                         : session

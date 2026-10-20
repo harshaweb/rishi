@@ -24,6 +24,61 @@ type CheckoutOptions = {
   modal: { ondismiss: () => void }
 }
 export type RentalPaymentMethod = "upi" | "card" | "netbanking"
+type DemoOutcome = "success" | "failure" | "cancel"
+
+function chooseDemoOutcome(amount: number, method: RentalPaymentMethod) {
+  return new Promise<DemoOutcome>((resolve) => {
+    const dialog = document.createElement("dialog")
+    dialog.className = "rental-demo-checkout"
+    dialog.innerHTML = `
+      <form method="dialog" class="rental-demo-checkout__panel">
+        <p class="rental-demo-checkout__eyebrow">DEMO PAYMENT GATEWAY</p>
+        <h2>Test your checkout</h2>
+        <p class="rental-demo-checkout__amount">₹${(amount / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</p>
+        <p class="rental-demo-checkout__copy">${method === "upi" ? "PhonePe / UPI" : method === "card" ? "Debit or credit card" : "Net banking"} · No real payment will be made.</p>
+        <div class="rental-demo-checkout__actions">
+          <button value="success" class="rental-demo-checkout__success">Simulate success</button>
+          <button value="failure" class="rental-demo-checkout__failure">Simulate failure</button>
+          <button value="cancel" class="rental-demo-checkout__cancel">Cancel</button>
+        </div>
+      </form>`
+    const style = document.createElement("style")
+    style.textContent = `
+      .rental-demo-checkout { width:min(440px,calc(100% - 32px)); padding:0; border:0; border-radius:20px; color:#202124; box-shadow:0 24px 80px #0005; }
+      .rental-demo-checkout::backdrop { background:#17203399; backdrop-filter:blur(3px); }
+      .rental-demo-checkout__panel { padding:28px; font:inherit; }
+      .rental-demo-checkout__eyebrow { margin:0 0 8px; color:#e31c5f; font-size:11px; font-weight:800; letter-spacing:.12em; }
+      .rental-demo-checkout h2 { margin:0; font-size:24px; }
+      .rental-demo-checkout__amount { margin:20px 0 4px; font-size:32px; font-weight:800; }
+      .rental-demo-checkout__copy { margin:0 0 24px; color:#666; font-size:14px; }
+      .rental-demo-checkout__actions { display:grid; gap:10px; }
+      .rental-demo-checkout__actions button { min-height:44px; border:0; border-radius:10px; font:inherit; font-weight:700; cursor:pointer; }
+      .rental-demo-checkout__success { color:white; background:#14804a; }
+      .rental-demo-checkout__failure { color:#8b2635; background:#fff0f1; }
+      .rental-demo-checkout__cancel { color:#333; background:#f2f3f5; }`
+    document.head.appendChild(style)
+    document.body.appendChild(dialog)
+    let settled = false
+    const finish = (outcome: DemoOutcome) => {
+      if (settled) return
+      settled = true
+      dialog.close()
+      dialog.remove()
+      style.remove()
+      resolve(outcome)
+    }
+    dialog.addEventListener("close", () => finish("cancel"), { once: true })
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) finish("cancel")
+    })
+    dialog.addEventListener("submit", (event) => {
+      event.preventDefault()
+      const value = (event.submitter as HTMLButtonElement | null)?.value
+      finish(value === "success" || value === "failure" ? value : "cancel")
+    })
+    dialog.showModal()
+  })
+}
 declare global {
   interface Window {
     Razorpay?: new (options: CheckoutOptions) => {
@@ -70,17 +125,42 @@ export async function rentalCheckout(
   method: RentalPaymentMethod = "upi"
 ) {
   try {
-    await loadCheckout()
     const order = await rentalRequest<{
+      mode?: "DEMO" | "RAZORPAY"
       orderId: string
       amount: number
       currency: string
-      key: string
+      key?: string
     }>(`/bookings/${booking.id}/pay`, { method })
+    if (order.mode === "DEMO") {
+      const outcome = await chooseDemoOutcome(order.amount, method)
+      if (outcome === "cancel") {
+        notify(
+          "Demo checkout closed. No payment was made; your reservation hold remains active."
+        )
+        refresh()
+        return
+      }
+      const result = await rentalRequest<{
+        outcome: "success" | "failure"
+        message?: string
+      }>(`/bookings/${booking.id}/demo-complete`, {
+        orderId: order.orderId,
+        outcome,
+      })
+      notify(
+        result.outcome === "success"
+          ? "Demo payment succeeded. Your reservation is confirmed; no money was charged."
+          : result.message || "Demo payment failed. No money was charged."
+      )
+      refresh()
+      return
+    }
+    await loadCheckout()
     await new Promise<void>((resolve, reject) => {
       let verifying = false
       const widget = new window.Razorpay!({
-        key: order.key,
+        key: order.key || "",
         amount: order.amount,
         currency: order.currency,
         order_id: order.orderId,

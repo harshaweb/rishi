@@ -16,6 +16,7 @@ type RentalSession = {
   user: RentalUser | null
   csrf: string
   paymentsConfigured: boolean
+  demoPayments?: boolean
   mapsToken: string
   emailConfigured: boolean
 }

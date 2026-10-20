@@ -64,6 +64,9 @@ const email = z
 const param = (req: Request, key = "id") => String(req.params[key])
 const uid = (req: Request) => req.rentalUser!.id
 const tokenHash = (s: string) => createHash("sha256").update(s).digest("hex")
+const demoPaymentsEnabled = () =>
+  process.env.NODE_ENV !== "production" &&
+  process.env.DEMO_PAYMENT_GATEWAY === "true"
 async function current(req: Request) {
   if (!req.session.rentalUserId) return null
   const u = await c("User").findOne({
@@ -166,9 +169,10 @@ r.get(
       csrf: req.session.csrf,
       digilockerRequired: digilockerRequired(),
       digilockerConfigured: digilockerConfigured(),
-      paymentsConfigured: Boolean(
-        process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
-      ),
+      paymentsConfigured:
+        demoPaymentsEnabled() ||
+        Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET),
+      demoPayments: demoPaymentsEnabled(),
       mapsToken: process.env.MAPBOX_PUBLIC_TOKEN || "",
       emailConfigured: Boolean(
         process.env.RESEND_API_KEY && process.env.EMAIL_FROM
@@ -1442,6 +1446,45 @@ r.post(
       expiresAt: { $gt: new Date() },
     })
     if (!b) throw fail(409, "This reservation cannot start a payment.")
+    if (
+      demoPaymentsEnabled() &&
+      !(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET)
+    ) {
+      let payment = await c("Payment").findOne({ bookingId: b.id })
+      if (payment && payment.provider !== "DEMO")
+        throw fail(409, "A real payment order already exists for this reservation.")
+      if (!payment) {
+        const row = record({
+          bookingId: b.id,
+          amount: b.total,
+          requestedMethod: method,
+          provider: "DEMO",
+          orderId: `demo_${rid()}`,
+          status: "CREATED",
+        })
+        try {
+          await c("Payment").insertOne(row)
+          payment = row
+        } catch (error) {
+          if ((error as { code?: number }).code !== 11000) throw error
+          payment = await c("Payment").findOne({ bookingId: b.id })
+        }
+      }
+      if (!payment?.orderId || payment.provider !== "DEMO")
+        throw fail(409, "The demo payment order could not be prepared.")
+      await c("Payment").updateOne(
+        { _id: payment._id, status: { $ne: "CAPTURED" } },
+        { $set: { requestedMethod: method, status: "CREATED" } }
+      )
+      res.json({
+        mode: "DEMO",
+        orderId: payment.orderId,
+        amount: payment.amount,
+        currency: "INR",
+        bookingId: b.id,
+      })
+      return
+    }
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET)
       throw fail(
         503,
@@ -1582,6 +1625,94 @@ export async function settleMongoPayment(orderId: string, paymentId: string) {
   return clean(result.booking)
 }
 r.post(
+  "/bookings/:id/demo-complete",
+  signed,
+  wrap(async (req, res) => {
+    if (!demoPaymentsEnabled())
+      throw fail(404, "The demo payment gateway is unavailable.")
+    const d = z
+      .object({ orderId: text(120), outcome: z.enum(["success", "failure"]) })
+      .parse(req.body)
+    const result = await tx(async (session) => {
+      const payment = await c("Payment").findOne(
+        { orderId: d.orderId, provider: "DEMO" },
+        options(session)
+      )
+      if (!payment || payment.bookingId !== param(req))
+        throw fail(404, "Demo payment order not found.")
+      const initial = await c("Booking").findOne(
+        { id: payment.bookingId, guestId: uid(req) },
+        options(session)
+      )
+      if (!initial) throw fail(404, "Reservation not found.")
+      await lockProperty(initial.propertyId, session)
+      const booking = await c("Booking").findOne(
+        { id: initial.id },
+        options(session)
+      )
+      if (!booking || booking.status !== "PENDING")
+        throw fail(409, "This reservation is no longer awaiting payment.")
+      if (
+        !booking.expiresAt ||
+        new Date(booking.expiresAt).getTime() <= Date.now()
+      )
+        throw fail(409, "The reservation hold expired. No payment was made.")
+      if (d.outcome === "failure") {
+        await c("Payment").updateOne(
+          { _id: payment._id },
+          { $set: { status: "FAILED", failureReason: "DEMO_SIMULATED" } },
+          options(session)
+        )
+        return { outcome: "failure" as const }
+      }
+      const paymentId = `demo_${rid()}`
+      await c("Payment").updateOne(
+        { _id: payment._id },
+        {
+          $set: {
+            paymentId,
+            method: payment.requestedMethod || "upi",
+            status: "CAPTURED",
+            simulated: true,
+          },
+          $unset: { failureReason: "" },
+        },
+        options(session)
+      )
+      const fields = {
+        status: "CONFIRMED",
+        paymentStatus: "PAID",
+        expiresAt: null,
+      }
+      await c("Booking").updateOne(
+        { id: booking.id },
+        { $set: fields },
+        options(session)
+      )
+      return {
+        outcome: "success" as const,
+        guestId: booking.guestId,
+        reference: booking.reference,
+        booking: { ...booking, ...fields },
+      }
+    })
+    if (result.outcome === "success") {
+      await notify(
+        result.guestId,
+        `Demo payment simulated. Reservation ${result.reference} is confirmed (no money was charged).`,
+        "/trips"
+      )
+      res.json({ outcome: "success", simulated: true, booking: clean(result.booking) })
+    } else {
+      res.json({
+        outcome: "failure",
+        simulated: true,
+        message: "Demo payment failed. No money was charged; your hold remains until expiry.",
+      })
+    }
+  })
+)
+r.post(
   "/bookings/:id/verify",
   signed,
   wrap(async (req, res) => {
@@ -1635,7 +1766,7 @@ r.get(
       counts[key] = await c(name).countDocuments(filter)
     const paid = await c("Payment")
       .aggregate([
-        { $match: { status: "CAPTURED" } },
+        { $match: { status: "CAPTURED", simulated: { $ne: true } } },
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ])
       .toArray()

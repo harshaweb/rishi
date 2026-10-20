@@ -9,6 +9,7 @@ import { createHash, randomBytes } from "node:crypto"
 import multer from "multer"
 import { rateLimit } from "express-rate-limit"
 import { rateStore } from "./rate-store.js"
+import { createPhoneOtp, normalizePhone, phoneOtpHash, sendPhoneOtp } from "./phone-otp.js"
 import { saveFile } from "./storage.js"
 import { parsePatch } from "./validation.js"
 import { dateInput, propertySchema } from "./rental-input.js"
@@ -112,6 +113,14 @@ const sensitive = rateLimit({
   legacyHeaders: false,
   message: { error: "Too many attempts. Try again in 15 minutes." },
 })
+const phoneOtpLimit = rateLimit({
+  windowMs: 15 * 60000,
+  limit: 5,
+  store: rateStore("mongo-rental-phone-otp:"),
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many code requests. Try again in 15 minutes." },
+})
 const messagesLimit = rateLimit({
   windowMs: 60000,
   limit: 20,
@@ -178,6 +187,86 @@ r.get(
         process.env.RESEND_API_KEY && process.env.EMAIL_FROM
       ),
     })
+  })
+)
+r.post(
+  "/auth/phone/request",
+  phoneOtpLimit,
+  sensitive,
+  wrap(async (req, res) => {
+    const d = z.object({
+      phone: text(30),
+      intent: z.enum(["LOGIN", "SIGNUP"]),
+      name: z.string().trim().max(100).optional(),
+      email: z.preprocess((v) => v === "" ? undefined : v, email.optional()),
+      consent: z.boolean().optional(),
+    }).parse(req.body)
+    let phone: string
+    try { phone = normalizePhone(d.phone) } catch (error) { throw fail(400, (error as Error).message) }
+    if (d.intent === "SIGNUP" && (!d.name || d.consent !== true))
+      throw fail(400, "Enter your name and accept the terms to create an account.")
+    const code = createPhoneOtp()
+    let delivery: { developmentOtp?: string }
+    try { delivery = await sendPhoneOtp(phone, code) } catch (error) { throw fail(503, (error as Error).message) }
+    req.session.rentalPhoneChallenge = {
+      phone, intent: d.intent, name: d.name, email: d.email,
+      consent: d.consent, hash: phoneOtpHash(phone, code),
+      expiresAt: Date.now() + 10 * 60_000, attempts: 0,
+    }
+    res.json({ message: "A sign-in code was sent to your phone.", ...delivery })
+  })
+)
+r.post(
+  "/auth/phone/verify",
+  sensitive,
+  wrap(async (req, res) => {
+    const { code } = z.object({ code: z.string().trim().regex(/^\d{6}$/) }).parse(req.body)
+    const challenge = req.session.rentalPhoneChallenge
+    if (!challenge || challenge.expiresAt <= Date.now()) {
+      delete req.session.rentalPhoneChallenge
+      throw fail(400, "Your code expired. Request a new one.")
+    }
+    challenge.attempts += 1
+    if (challenge.attempts > 5) {
+      delete req.session.rentalPhoneChallenge
+      throw fail(429, "Too many incorrect codes. Request a new one.")
+    }
+    if (phoneOtpHash(challenge.phone, code) !== challenge.hash)
+      throw fail(401, "That code is incorrect. Please try again.")
+
+    const phoneDigits = challenge.phone.replace(/\D/g, "")
+    const phoneAliases = [challenge.phone, phoneDigits, phoneDigits.slice(-10)]
+    let user: Document | null = null
+    if (challenge.intent === "LOGIN") {
+      const profile = await c("Profile").findOne({ phone: { $in: phoneAliases } })
+      if (profile) user = await c("User").findOne({ id: profile.userId, active: true })
+      if (!user) throw fail(404, "No account was found for this phone number. Sign up first.")
+    } else {
+      const existing = await c("Profile").findOne({ phone: { $in: phoneAliases } })
+      if (existing) throw fail(409, "This phone number already has an account. Log in instead.")
+      const accountEmail = challenge.email || `phone-${phoneDigits}@users.omshivraj.invalid`
+      if (await c("User").findOne({ email: accountEmail }))
+        throw fail(409, "This email is already registered. Log in or use another email.")
+      const id = rid()
+      const passwordHash = await bcrypt.hash(randomBytes(32).toString("hex"), 12)
+      await tx(async (session) => {
+        await c("User").insertOne(record({
+          name: challenge.name!, email: accountEmail, passwordHash,
+          role: "GUEST", verified: false, active: true, sessionVersion: 0,
+        }, id), options(session))
+        await c("Profile").insertOne(record({
+          userId: id, phone: challenge.phone, photo: "", notifications: true,
+        }, id), options(session))
+      })
+      user = await c("User").findOne({ id })
+    }
+    if (!user) throw fail(401, "Could not sign in. Please request a new code.")
+    delete req.session.rentalPhoneChallenge
+    await new Promise<void>((resolve, reject) => req.session.regenerate((e) => e ? reject(e) : resolve()))
+    req.session.rentalUserId = String(user.id)
+    req.session.rentalVersion = Number(user.sessionVersion || 0)
+    req.session.csrf = rid()
+    res.json({ user: await current(req), csrf: req.session.csrf })
   })
 )
 r.post(
@@ -374,7 +463,7 @@ r.get(
         destination: z.string().max(100).default(""),
         checkIn: z.string().default(""),
         checkOut: z.string().default(""),
-        guests: z.coerce.number().int().min(1).max(30).default(1),
+        guests: z.coerce.number().int().min(1).max(30).default(1).transform((value) => Math.min(value, 2)),
         category: z.string().max(100).default(""),
         type: z.string().max(100).default(""),
         minPrice: z.coerce.number().min(0).max(1000000).default(0),

@@ -69,6 +69,7 @@ import {
   rentalAmenities,
   rentalMoney as money,
   RENTAL_HOURLY_RATE,
+  RENTAL_MAX_GUESTS,
   rentalNightlyRate,
   rentalDate,
   type RentalProperty,
@@ -78,6 +79,7 @@ import { RentalWorkspace } from "./rental-workspace"
 import { rentalCities } from "../../../server/shared/rental-region"
 import {
   bookingWhatsAppLink,
+  bookingWhatsAppMessage,
   rentalContact,
 } from "../../../server/shared/rental-contact"
 
@@ -171,10 +173,10 @@ function SearchBar({ compact = false }: { compact?: boolean }) {
     [checkIn, setCheckIn] = useState(params.get("checkIn") || ""),
     [checkOut, setCheckOut] = useState(params.get("checkOut") || "")
   const [adults, setAdults] = useState(
-      Number(params.get("adults") || params.get("guests") || 2)
+      Math.min(RENTAL_MAX_GUESTS, Math.max(1, Number(params.get("guests") || params.get("adults")) || 2))
     ),
-    [children, setChildren] = useState(Number(params.get("children") || 0)),
-    [infants, setInfants] = useState(Number(params.get("infants") || 0)),
+    [children, setChildren] = useState(0),
+    [infants, setInfants] = useState(0),
     [pets, setPets] = useState(Number(params.get("pets") || 0))
   const [panel, setPanel] = useState<"destination" | "dates" | "guests" | null>(
       null
@@ -406,28 +408,12 @@ function SearchBar({ compact = false }: { compact?: boolean }) {
           ) : (
             <>
               <Counter
-                name="Adults"
-                description="Ages 13 or above"
+                name="Guests"
+                description="Choose one or two guests"
                 value={adults}
                 min={1}
-                max={20}
-                set={setAdults}
-              />
-              <Counter
-                name="Children"
-                description="Ages 2–12"
-                value={children}
-                min={0}
-                max={10}
-                set={setChildren}
-              />
-              <Counter
-                name="Infants"
-                description="Under 2"
-                value={infants}
-                min={0}
-                max={5}
-                set={setInfants}
+                max={RENTAL_MAX_GUESTS}
+                set={(value) => { setAdults(value); setChildren(0); setInfants(0) }}
               />
               <Counter
                 name="Pets"
@@ -779,7 +765,7 @@ export function RentalCard({ property: p, bookingQuery = "" }: { property: Renta
             {Number(p.rating).toFixed(2)}
           </span>}
         </div>
-        <p className="r-card-stay-meta">{p.type} · {p.capacity} guests</p>
+        <p className="r-card-stay-meta">{p.type} · {Math.min(p.capacity, RENTAL_MAX_GUESTS)} guests</p>
         <div className="r-card-location-rate">
           <span className="r-card-city">{p.city}</span>
           <span className="r-card-rate"><b>{money(cardRate)}</b><small> / night{cardGuests >= 2 ? ` · ${cardGuests} guests` : ""}</small></span>
@@ -1129,7 +1115,7 @@ function HomePage() {
   const [destination, setDestination] = useState("")
   const [checkIn, setCheckIn] = useState("")
   const [checkOut, setCheckOut] = useState("")
-  const [adults, setAdults] = useState(2)
+  const [adults, setAdults] = useState(RENTAL_MAX_GUESTS)
   const [children, setChildren] = useState(0)
   const [infants, setInfants] = useState(0)
   const [pets, setPets] = useState(0)
@@ -1207,9 +1193,7 @@ function HomePage() {
               <button type="submit" aria-label="Search stays"><Search size={19} /><span>Search</span></button>
               {guestPickerOpen && (
                 <div className="r-bloom-guest-picker" role="dialog" aria-label="Choose guests and pets">
-                  <Counter name="Adults" description="Ages 13 or above" value={adults} min={1} max={20} set={setAdults} />
-                  <Counter name="Children" description="Ages 2–12" value={children} min={0} max={10} set={setChildren} />
-                  <Counter name="Infants" description="Under 2" value={infants} min={0} max={5} set={setInfants} />
+                  <Counter name="Guests" description="Choose one or two guests" value={adults} min={1} max={RENTAL_MAX_GUESTS} set={(value) => { setAdults(value); setChildren(0); setInfants(0) }} />
                   <Counter name="Pets" description="Filter for pet-friendly stays" value={pets} min={0} max={2} set={setPets} />
                   <div className="r-bloom-guest-picker-actions">
                   <button type="button" onClick={() => { setAdults(2); setChildren(0); setInfants(0); setPets(0) }}>Reset</button>
@@ -1744,7 +1728,7 @@ function identityBookingDraft(slug: string) {
     return {
       checkIn: params.get("checkIn") || "",
       checkOut: params.get("checkOut") || "",
-      guests: Number.isInteger(guests) && guests > 0 && guests <= 30 ? guests : 2,
+      guests: Number.isInteger(guests) && guests > 0 ? Math.min(guests, RENTAL_MAX_GUESTS) : RENTAL_MAX_GUESTS,
       coupon: "",
       bookingType: "OVERNIGHT" as const,
       arrivalTime: "10:00",
@@ -1760,9 +1744,9 @@ function identityBookingDraft(slug: string) {
       checkIn: typeof value.checkIn === "string" ? value.checkIn : "",
       checkOut: typeof value.checkOut === "string" ? value.checkOut : "",
       guests:
-        Number.isInteger(value.guests) && value.guests > 0 && value.guests <= 30
-          ? value.guests
-          : 2,
+        Number.isInteger(value.guests) && value.guests > 0
+          ? Math.min(value.guests, RENTAL_MAX_GUESTS)
+          : RENTAL_MAX_GUESTS,
       coupon: typeof value.coupon === "string" ? value.coupon : "",
       bookingType: value.bookingType === "HOURLY" ? "HOURLY" as const : "OVERNIGHT" as const,
       arrivalTime: typeof value.arrivalTime === "string" ? value.arrivalTime : "10:00",
@@ -1828,6 +1812,10 @@ function StayPage() {
   const quoteVersion = useRef(0)
   const galleryOpen = gallery !== null
   const galleryImageCount = p ? propertyImages(p).length : 0
+  useEffect(() => {
+    if (p && guests > Math.min(p.capacity, RENTAL_MAX_GUESTS))
+      setGuests(Math.min(p.capacity, RENTAL_MAX_GUESTS))
+  }, [p?.id, p?.capacity])
   useEffect(() => {
     if (!galleryOpen || galleryPaused || galleryImageCount < 2) return
     const timer = window.setInterval(() => {
@@ -1983,13 +1971,17 @@ function StayPage() {
       }
       let whatsappOpened = false
       if (p.bookingMode === "HOST_APPROVAL" && whatsappTab) {
-        const message = [
-          "Hi, please confirm my stay booking request.",
-          `Booking reference: ${booking.reference}`,
-          `Stay: ${p.title}, ${p.city}`,
-          `Dates: ${checkIn} to ${checkOut}`,
-          `Guests: ${guests}`,
-        ].join("\n")
+        const message = bookingWhatsAppMessage({
+          ...booking,
+          checkIn,
+          checkOut,
+          guests,
+          bookingType,
+          arrivalTime,
+          departureTime,
+          checkInTime: p.checkInTime,
+          checkOutTime: p.checkOutTime,
+        })
         try {
           whatsappTab.location.replace(bookingWhatsAppLink(message))
           whatsappOpened = true
@@ -2113,7 +2105,7 @@ function StayPage() {
             <div className="r-stay-stats">
               <span>
                 <Users size={20} aria-hidden="true" />
-                <b>{p.capacity}</b>
+                <b>{Math.min(p.capacity, RENTAL_MAX_GUESTS)}</b>
                 <small>guests</small>
               </span>
               <span>
@@ -2373,7 +2365,7 @@ function StayPage() {
                     clearQuote()
                   }}
                 >
-                  {Array.from({ length: p.capacity }, (_, i) => (
+                  {Array.from({ length: Math.min(p.capacity, RENTAL_MAX_GUESTS) }, (_, i) => (
                     <option key={i} value={i + 1}>
                       {i + 1} guest{i ? "s" : ""}
                     </option>
@@ -2795,7 +2787,7 @@ function StayPage() {
             <h3>House rules</h3>
             <p>Check-in: after {rentalTime(p.checkInTime)}</p>
             <p>Checkout: before {rentalTime(p.checkOutTime)}</p>
-            <p>Maximum {p.capacity} guests</p>
+            <p>Maximum {Math.min(p.capacity, RENTAL_MAX_GUESTS)} guests</p>
             <p>
               {p.amenities.includes("Pets allowed")
                 ? "Pets welcome"

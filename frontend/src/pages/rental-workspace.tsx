@@ -19,6 +19,7 @@ import {
   rentalDate,
   rentalAmenities,
   rentalCategories,
+  RENTAL_MAX_GUESTS,
   type RentalBooking,
   type RentalProperty,
 } from "../../../server/shared/rentals"
@@ -26,6 +27,7 @@ import { RentalCard } from "./rentals"
 import { rentalCities } from "../../../server/shared/rental-region"
 import {
   bookingWhatsAppLink,
+  bookingWhatsAppMessage,
   rentalContact,
 } from "../../../server/shared/rental-contact"
 import { ApiError } from "../lib/api"
@@ -59,12 +61,14 @@ function Field({
   type = "text",
   value,
   required = true,
+  max,
 }: {
   label: string
   name: string
   type?: string
   value?: string | number
   required?: boolean
+  max?: number
 }) {
   return (
     <label className="r-input-label">
@@ -73,6 +77,7 @@ function Field({
         name={name}
         type={type}
         step={type === "number" ? "any" : undefined}
+        max={max}
         defaultValue={value}
         required={required}
       />
@@ -213,6 +218,16 @@ function Auth() {
   const [message, setMessage] = useState(""),
     [dev, setDev] = useState(""),
     [showPassword, setShowPassword] = useState(false)
+  const [phoneMode, setPhoneMode] = useState(pathname === "/login" || pathname === "/signup"),
+    [phone, setPhone] = useState(""),
+    [phoneName, setPhoneName] = useState(""),
+    [phoneEmail, setPhoneEmail] = useState(""),
+    [phoneConsent, setPhoneConsent] = useState(false),
+    [phoneOtp, setPhoneOtp] = useState(""),
+    [otpSent, setOtpSent] = useState(false),
+    [developmentOtp, setDevelopmentOtp] = useState(""),
+    [phoneBusy, setPhoneBusy] = useState(false),
+    [phoneError, setPhoneError] = useState("")
   const signup = pathname === "/signup",
     login = pathname === "/login",
     verify = pathname === "/verify-email",
@@ -270,6 +285,51 @@ function Auth() {
               Continue to log in
             </Link>
           </div>
+        ) : phoneMode && (login || signup) ? (
+          <form
+            className="r-form"
+            onSubmit={async (event) => {
+              event.preventDefault()
+              setPhoneBusy(true)
+              setPhoneError("")
+              const form = event.currentTarget
+              try {
+                const body = otpSent
+                  ? { code: phoneOtp }
+                  : {
+                      phone,
+                      intent: signup ? "SIGNUP" : "LOGIN",
+                      ...(signup ? { name: phoneName, email: phoneEmail, consent: phoneConsent } : {}),
+                    }
+                const result = await rentalRequest<{
+                  developmentOtp?: string
+                }>(otpSent ? "/auth/phone/verify" : "/auth/phone/request", body)
+                if (!otpSent) {
+                  setOtpSent(true)
+                  setDevelopmentOtp(result.developmentOtp || "")
+                  setPhoneOtp("")
+                  return
+                }
+                await refreshSession()
+                navigate(next)
+                form.reset()
+              } catch (error) {
+                setPhoneError((error as Error).message)
+              } finally {
+                setPhoneBusy(false)
+              }
+            }}
+          >
+            {signup && <label className="r-input-label">Full name<input autoComplete="name" value={phoneName} onChange={(e) => setPhoneName(e.target.value)} required /></label>}
+            <label className="r-input-label">Phone number<input type="tel" inputMode="tel" autoComplete="tel" placeholder="+91 98765 43210" value={phone} onChange={(e) => setPhone(e.target.value)} required disabled={otpSent} /></label>
+            {signup && <label className="r-input-label">Email address <small>Optional</small><input type="email" autoComplete="email" value={phoneEmail} onChange={(e) => setPhoneEmail(e.target.value)} disabled={otpSent} /></label>}
+            {otpSent && <label className="r-input-label">6-digit code<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={phoneOtp} onChange={(e) => setPhoneOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} required /><small>Code sent to {phone}. It expires in 10 minutes.</small></label>}
+            {developmentOtp && <p role="status">Local development code: <strong>{developmentOtp}</strong></p>}
+            {signup && !otpSent && <label className="r-check"><input type="checkbox" checked={phoneConsent} onChange={(e) => setPhoneConsent(e.target.checked)} required /><span>I agree to the <Link to="/terms">terms</Link> and <Link to="/privacy">privacy policy</Link>.</span></label>}
+            {phoneError && <p className="r-error" role="alert">{phoneError}</p>}
+            <button className="r-primary" disabled={phoneBusy || (otpSent ? phoneOtp.length !== 6 : !phone || (signup && (!phoneName.trim() || !phoneConsent)))}>{phoneBusy ? "Please wait…" : otpSent ? "Verify code and continue" : "Send code"}</button>
+            {otpSent && <button type="button" className="r-text-button" onClick={() => { setOtpSent(false); setDevelopmentOtp(""); setPhoneOtp(""); setPhoneError("") }}>Change phone number</button>}
+          </form>
         ) : (
           <Form
             label={
@@ -383,6 +443,7 @@ function Auth() {
           </Form>
         )}
         <div className="r-auth-links">
+          {(login || signup) && <button type="button" className="r-text-button" onClick={() => setPhoneMode(!phoneMode)}>{phoneMode ? "Use email and password instead" : "Continue with phone and OTP"}</button>}
           <Link to={`${signup ? "/login" : "/signup"}${nextQuery}`}>
             {signup
               ? "Already have an account? Log in"
@@ -710,7 +771,7 @@ function Trips({ host = false }: { host?: boolean }) {
                     <a
                       className="r-secondary"
                       href={bookingWhatsAppLink(
-                        `Hi, please help confirm my booking ${b.reference} at ${b.title} for ${b.checkIn}${b.bookingType === "HOURLY" ? ` from ${b.arrivalTime?.slice(0, 5)} to ${b.departureTime?.slice(0, 5)}` : ` to ${b.checkOut}`}.`
+                        bookingWhatsAppMessage(b)
                       )}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -1071,7 +1132,7 @@ function ListingEditor({ id }: { id?: string }) {
             {[
               ["nightlyRate", "Nightly rate ₹", p ? p.nightlyRate / 100 : 2500],
               ["cleaningFee", "Cleaning fee ₹", p ? p.cleaningFee / 100 : 0],
-              ["capacity", "Guests", p?.capacity || 2],
+              ["capacity", "Guests", Math.min(p?.capacity || RENTAL_MAX_GUESTS, RENTAL_MAX_GUESTS)],
               ["bedrooms", "Bedrooms", p?.bedrooms ?? 1],
               ["beds", "Beds", p?.beds || 1],
               ["bathrooms", "Bathrooms", p?.bathrooms || 1],
@@ -1082,6 +1143,7 @@ function ListingEditor({ id }: { id?: string }) {
                 label={String(label)}
                 value={Number(value)}
                 type="number"
+                max={String(name) === "capacity" ? RENTAL_MAX_GUESTS : undefined}
               />
             ))}
             {(["latitude", "longitude"] as const).map((name) => (
@@ -1489,7 +1551,7 @@ function ListingPreview({ id }: { id: string }) {
       <span className="r-badge">PRIVATE PREVIEW · {p.status}</span>
       <h1>{p.title}</h1>
       <p>
-        {p.city} · {p.capacity} guests · {money(p.nightlyRate)} per night
+        {p.city} · {Math.min(p.capacity, RENTAL_MAX_GUESTS)} guests · {money(p.nightlyRate)} per night
       </p>
       <div className="r-photo-editor">
         {p.images.map((url, i) => (

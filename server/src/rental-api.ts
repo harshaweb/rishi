@@ -9,6 +9,7 @@ import { createHash, randomBytes } from "node:crypto"
 import multer from "multer"
 import { rateLimit } from "express-rate-limit"
 import { rateStore } from "./rate-store.js"
+import { createPhoneOtp, normalizePhone, phoneOtpHash, sendPhoneOtp } from "./phone-otp.js"
 import { isMongo } from "./database-url.js"
 import { saveFile } from "./storage.js"
 import { parsePatch } from "./validation.js"
@@ -37,6 +38,16 @@ declare module "express-session" {
   interface SessionData {
     rentalUserId?: string
     rentalVersion?: number
+    rentalPhoneChallenge?: {
+      phone: string
+      intent: "LOGIN" | "SIGNUP"
+      name?: string
+      email?: string
+      consent?: boolean
+      hash: string
+      expiresAt: number
+      attempts: number
+    }
   }
 }
 declare global {
@@ -99,7 +110,7 @@ const dateInput = z.object({
   bookingType: z.enum(["OVERNIGHT", "HOURLY"]).default("OVERNIGHT"),
   arrivalTime: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/).default("10:00"),
   departureTime: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/).default("13:00"),
-  guests: z.coerce.number().int().min(1).max(30),
+  guests: z.coerce.number().int().min(1).max(2),
   coupon: z.string().max(50).default(""),
 })
 const propertySchema = z.object({
@@ -127,7 +138,7 @@ const propertySchema = z.object({
   description: text(10000),
   nightlyRate: z.coerce.number().int().min(10000).max(100000000),
   cleaningFee: z.coerce.number().int().min(0).max(10000000).default(0),
-  capacity: z.coerce.number().int().min(1).max(30),
+  capacity: z.coerce.number().int().min(1).max(2),
   bedrooms: z.coerce.number().int().min(0).max(20),
   beds: z.coerce.number().int().min(1).max(30),
   bathrooms: z.coerce.number().int().min(1).max(20),
@@ -165,6 +176,14 @@ const sensitive = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
   message: { error: "Too many attempts. Try again in 15 minutes." },
+})
+const phoneOtpLimit = rateLimit({
+  windowMs: 15 * 60000,
+  limit: 5,
+  store: rateStore("rental-phone-otp:"),
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many code requests. Try again in 15 minutes." },
 })
 const messagesLimit = rateLimit({
   windowMs: 60000,
@@ -208,6 +227,89 @@ rentalRouter.get(
         process.env.RESEND_API_KEY && process.env.EMAIL_FROM
       ),
     })
+  })
+)
+rentalRouter.post(
+  "/auth/phone/request",
+  phoneOtpLimit,
+  sensitive,
+  wrap(async (req, res) => {
+    const d = z.object({
+      phone: text(30),
+      intent: z.enum(["LOGIN", "SIGNUP"]),
+      name: z.string().trim().max(100).optional(),
+      email: z.preprocess((v) => v === "" ? undefined : v, safeEmail.optional()),
+      consent: z.boolean().optional(),
+    }).parse(req.body)
+    let phone: string
+    try { phone = normalizePhone(d.phone) } catch (error) { throw fail(400, (error as Error).message) }
+    if (d.intent === "SIGNUP" && (!d.name || d.consent !== true))
+      throw fail(400, "Enter your name and accept the terms to create an account.")
+    const code = createPhoneOtp()
+    let delivery: { developmentOtp?: string }
+    try { delivery = await sendPhoneOtp(phone, code) } catch (error) { throw fail(503, (error as Error).message) }
+    req.session.rentalPhoneChallenge = {
+      phone, intent: d.intent, name: d.name, email: d.email,
+      consent: d.consent, hash: phoneOtpHash(phone, code),
+      expiresAt: Date.now() + 10 * 60_000, attempts: 0,
+    }
+    res.json({ message: "A sign-in code was sent to your phone.", ...delivery })
+  })
+)
+rentalRouter.post(
+  "/auth/phone/verify",
+  sensitive,
+  wrap(async (req, res) => {
+    const { code } = z.object({ code: z.string().trim().regex(/^\d{6}$/) }).parse(req.body)
+    const challenge = req.session.rentalPhoneChallenge
+    if (!challenge || challenge.expiresAt <= Date.now()) {
+      delete req.session.rentalPhoneChallenge
+      throw fail(400, "Your code expired. Request a new one.")
+    }
+    challenge.attempts += 1
+    if (challenge.attempts > 5) {
+      delete req.session.rentalPhoneChallenge
+      throw fail(429, "Too many incorrect codes. Request a new one.")
+    }
+    if (phoneOtpHash(challenge.phone, code) !== challenge.hash)
+      throw fail(401, "That code is incorrect. Please try again.")
+
+    const phoneDigits = challenge.phone.replace(/\D/g, "")
+    const phoneAliases = [challenge.phone, phoneDigits, phoneDigits.slice(-10)]
+    let userId: string | undefined
+    if (challenge.intent === "LOGIN") {
+      const [found] = await rq(
+        `SELECT u.id FROM "RentalUser" u JOIN "RentalProfile" p ON p."userId"=u.id WHERE p.phone=ANY($1::text[]) AND u.active LIMIT 1`,
+        [phoneAliases]
+      )
+      userId = found?.id
+      if (!userId) throw fail(404, "No account was found for this phone number. Sign up first.")
+    } else {
+      const [existing] = await rq(
+        `SELECT id FROM "RentalProfile" WHERE phone=ANY($1::text[]) LIMIT 1`,
+        [phoneAliases]
+      )
+      if (existing) throw fail(409, "This phone number already has an account. Log in instead.")
+      const accountEmail = challenge.email || `phone-${phoneDigits}@users.omshivraj.invalid`
+      const [emailUser] = await rq(`SELECT id FROM "RentalUser" WHERE email=$1`, [accountEmail])
+      if (emailUser) throw fail(409, "This email is already registered. Log in or use another email.")
+      userId = rid()
+      const passwordHash = await bcrypt.hash(randomBytes(32).toString("hex"), 12)
+      await tx(async (db) => {
+        await rq(
+          `INSERT INTO "RentalUser" (id,name,email,"passwordHash") VALUES ($1,$2,$3,$4)`,
+          [userId, challenge.name, accountEmail, passwordHash], db
+        )
+        await rq(`INSERT INTO "RentalProfile" ("userId",phone) VALUES ($1,$2)`, [userId, challenge.phone], db)
+      })
+    }
+    delete req.session.rentalPhoneChallenge
+    await new Promise<void>((resolve, reject) => req.session.regenerate((e) => e ? reject(e) : resolve()))
+    req.session.rentalUserId = userId
+    const [account] = await rq(`SELECT "sessionVersion" FROM "RentalUser" WHERE id=$1`, [userId])
+    req.session.rentalVersion = account.sessionVersion
+    req.session.csrf = rid()
+    res.json({ user: await current(req), csrf: req.session.csrf })
   })
 )
 rentalRouter.post(
@@ -416,7 +518,7 @@ rentalRouter.get(
         destination: z.string().max(100).default(""),
         checkIn: z.string().optional(),
         checkOut: z.string().optional(),
-        guests: z.coerce.number().int().min(1).max(30).default(1),
+        guests: z.coerce.number().int().min(1).max(30).default(1).transform((value) => Math.min(value, 2)),
         category: z.string().max(100).default(""),
         type: z.string().max(100).default(""),
         minPrice: z.coerce.number().min(0).max(1000000).default(0),

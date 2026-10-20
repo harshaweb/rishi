@@ -13,7 +13,7 @@ export const dateInput = z.object({
   bookingType: z.enum(["OVERNIGHT", "HOURLY"]).default("OVERNIGHT"),
   arrivalTime: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/).default("10:00"),
   departureTime: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/).default("13:00"),
-  guests: z.coerce.number().int().min(1).max(30),
+  guests: z.coerce.number().int().min(1).max(2),
   coupon: z.string().max(50).default(""),
 })
 export const propertySchema = z.object({
@@ -41,7 +41,7 @@ export const propertySchema = z.object({
   description: text(10000),
   nightlyRate: z.coerce.number().int().min(10000).max(100000000),
   cleaningFee: z.coerce.number().int().min(0).max(10000000).default(0),
-  capacity: z.coerce.number().int().min(1).max(30),
+  capacity: z.coerce.number().int().min(1).max(2),
   bedrooms: z.coerce.number().int().min(0).max(20),
   beds: z.coerce.number().int().min(1).max(30),
   bathrooms: z.coerce.number().int().min(1).max(20),

@@ -49,6 +49,11 @@ check(
   Boolean(env.RESEND_API_KEY && env.EMAIL_FROM),
   "Transactional email is configured"
 )
+console.log(
+  env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_PHONE_NUMBER
+    ? "PASS Twilio SMS credentials configured; verify sender and destination delivery separately"
+    : "WARN Configure TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_PHONE_NUMBER before enabling phone OTP sign-in"
+)
 check(
   Boolean((env.S3_BUCKET && env.S3_REGION) || databaseReady),
   "Persistent production upload storage is configured"

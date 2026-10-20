@@ -1954,6 +1954,11 @@ function StayPage() {
       )
       return
     }
+    const whatsappTab =
+      p.bookingMode === "HOST_APPROVAL"
+        ? window.open("about:blank", "_blank")
+        : null
+    if (whatsappTab) whatsappTab.opener = null
     setBusy(true)
     setError("")
     try {
@@ -1976,14 +1981,31 @@ function StayPage() {
       } catch {
         /* The saved draft expires independently. */
       }
+      let whatsappOpened = false
+      if (p.bookingMode === "HOST_APPROVAL" && whatsappTab) {
+        const message = [
+          "Hi, please confirm my stay booking request.",
+          `Booking reference: ${booking.reference}`,
+          `Stay: ${p.title}, ${p.city}`,
+          `Dates: ${checkIn} to ${checkOut}`,
+          `Guests: ${guests}`,
+        ].join("\n")
+        try {
+          whatsappTab.location.replace(bookingWhatsAppLink(message))
+          whatsappOpened = true
+        } catch {
+          whatsappTab.close()
+        }
+      }
       notify(
-        `Request ${booking.reference} saved. ${p.bookingMode === "HOST_APPROVAL" ? "Awaiting host approval." : "Complete payment to confirm."}`
+        `Request ${booking.reference} saved. ${p.bookingMode === "HOST_APPROVAL" ? whatsappOpened ? "WhatsApp opened with the request ready to send." : "Open Trips and choose Confirm via WhatsApp to send it." : "Complete payment to confirm."}`
       )
       if (p.bookingMode === "PAYMENT") {
         await rentalCheckout(booking, () => {}, notify, paymentMethod)
       }
       navigate("/trips")
     } catch (e) {
+      if (whatsappTab && !whatsappTab.closed) whatsappTab.close()
       setReviewBooking(false)
       quoteVersion.current++
       if (e instanceof ApiError && e.status === 409) setQuote(null)
@@ -2694,7 +2716,7 @@ function StayPage() {
           </dl>
           <p>{p.bookingMode === "HOST_APPROVAL" ? "This is a booking request. Your host or an administrator must confirm it within 48 hours. Payment is due at the property after confirmation." : `Your dates are held for 20 minutes. Pay by ${paymentMethod === "upi" ? "PhonePe / UPI" : paymentMethod === "card" ? "card" : "net banking"} in secure checkout to confirm your booking.`}</p>
           <p>Availability and the total price are checked again when you confirm.</p>
-          <button className="r-primary r-full" disabled={busy} onClick={reserve}>{busy ? "Saving your request…" : p.bookingMode === "HOST_APPROVAL" ? "Confirm booking request" : "Continue to secure payment"}</button>
+          <button className="r-primary r-full" disabled={busy} onClick={reserve}>{busy ? "Saving your request…" : p.bookingMode === "HOST_APPROVAL" ? "Send booking request on WhatsApp" : "Continue to secure payment"}</button>
           <button className="r-text-button" disabled={busy} onClick={() => setReviewBooking(false)}>Back to dates</button>
         </div>
       </RentalDialog>}

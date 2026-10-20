@@ -1311,8 +1311,8 @@ function HomePage() {
             <Section
               title="A beautiful stay. A little less spend."
               subtitle="Thoughtful places for everyday budgets."
-              items={all.filter((p) => p.nightlyRate <= 350000)}
-              query="maxPrice=3500"
+              items={all.filter((p) => p.capacity >= 2)}
+              query="maxPrice=3599"
             />
             <Section
               title="A little extra room to unwind"
@@ -2304,7 +2304,7 @@ function StayPage() {
             <p className="r-booking-subtitle">
               Entire {p.type.toLowerCase()} · {p.city}
             </p>
-            {p.capacity >= 2 && p.nightlyRate <= 350000 && <p className="r-two-guest-rate">From ₹3,500 per night for 2 guests</p>}
+            {p.capacity >= 2 && <p className="r-two-guest-rate">₹3,599 per night for 2 guests</p>}
             <div className="r-booking-mode" role="group" aria-label="Booking duration">
               <button type="button" className={bookingType === "OVERNIGHT" ? "active" : ""} aria-pressed={bookingType === "OVERNIGHT"} onClick={() => {
                 clearQuote()

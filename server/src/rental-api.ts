@@ -450,7 +450,7 @@ rentalRouter.get(
     }
     add(`p.city ILIKE ?`, `%${rentalDestination(data.destination)}%`)
     add(`p.capacity>=?`, data.guests)
-    const guestRate = `(CASE WHEN ${data.guests}>=2 AND p.capacity>=2 THEN GREATEST(p."nightlyRate",350000) ELSE p."nightlyRate" END)`
+    const guestRate = `(CASE WHEN ${data.guests}>=2 AND p.capacity>=2 THEN 359900 ELSE p."nightlyRate" END)`
     add(`${guestRate}>=?`, Math.round(data.minPrice * 100))
     add(`${guestRate}<=?`, Math.round(data.maxPrice * 100))
     add(`p.bedrooms>=?`, data.bedrooms)

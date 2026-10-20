@@ -302,7 +302,7 @@ export async function searchProperties(
         nightlyRate: {
           $cond: [
             { $and: [{ $gte: [data.guests, 2] }, { $gte: ["$capacity", 2] }] },
-            { $max: ["$nightlyRate", 350000] },
+            359900,
             "$nightlyRate",
           ],
         },

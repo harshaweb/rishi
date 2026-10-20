@@ -76,7 +76,10 @@ import {
 } from "../../../server/shared/rentals"
 import { RentalWorkspace } from "./rental-workspace"
 import { rentalCities } from "../../../server/shared/rental-region"
-import { rentalContact } from "../../../server/shared/rental-contact"
+import {
+  bookingWhatsAppLink,
+  rentalContact,
+} from "../../../server/shared/rental-contact"
 
 const icons = [
   Building2,
@@ -2487,6 +2490,17 @@ function StayPage() {
               <a className="r-payment-help" href={rentalContact.callUrl}>
                 Questions about payment? Call us{" "}
                 <ArrowUpRight size={14} aria-hidden="true" />
+              </a>
+              <a
+                className="r-payment-help"
+                href={bookingWhatsAppLink(
+                  `Hi, please help me confirm a booking at ${p.title} in ${p.city}.`
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <MessageCircle size={14} aria-hidden="true" /> Confirm this
+                booking on WhatsApp · {rentalContact.phone}
               </a>
             </section>
             {session && (

@@ -24,7 +24,10 @@ import {
 } from "../../../server/shared/rentals"
 import { RentalCard } from "./rentals"
 import { rentalCities } from "../../../server/shared/rental-region"
-import { rentalContact } from "../../../server/shared/rental-contact"
+import {
+  bookingWhatsAppLink,
+  rentalContact,
+} from "../../../server/shared/rental-contact"
 import { ApiError } from "../lib/api"
 import {
   LayoutDashboard,
@@ -46,6 +49,7 @@ import {
   Download,
   RefreshCw,
   ShieldCheck,
+  MessageCircle,
 } from "lucide-react"
 
 type Row = Record<string, unknown>
@@ -701,6 +705,18 @@ function Trips({ host = false }: { host?: boolean }) {
                     >
                       {host ? "Decline / cancel" : "Cancel reservation"}
                     </button>
+                  )}
+                  {!host && b.status === "PENDING" && (
+                    <a
+                      className="r-secondary"
+                      href={bookingWhatsAppLink(
+                        `Hi, please help confirm my booking ${b.reference} at ${b.title} for ${b.checkIn}${b.bookingType === "HOURLY" ? ` from ${b.arrivalTime?.slice(0, 5)} to ${b.departureTime?.slice(0, 5)}` : ` to ${b.checkOut}`}.`
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <MessageCircle size={15} /> Confirm via WhatsApp
+                    </a>
                   )}
                   {!host &&
                     !b.reviewId &&

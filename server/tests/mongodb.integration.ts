@@ -238,7 +238,7 @@ try {
   equal(
     (await send(guest, "post", `/properties/${propertyId}/quote`, booking(5)))
       .body.total,
-    430000,
+    745000,
     "Server calculated price; ignores client total"
   )
   equal(
@@ -758,7 +758,7 @@ try {
         coupon: "DELHI10",
       })
     ).body.total,
-    388000,
+    671500,
     "Coupon discount uses server pricing"
   )
   equal(

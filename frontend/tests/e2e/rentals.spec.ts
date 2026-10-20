@@ -18,17 +18,15 @@ test("destination search, guest selection, filtering and photo carousel", async 
   await page.goto("/")
   await expect(page).toHaveTitle(/Omshivraj/)
   await expect(page.locator(".r-card").first()).toBeVisible()
-  await page.locator(".r-search-part.where").click()
-  await page.getByPlaceholder("Delhi, Gurugram, Noida…").fill("Delhi")
-  await page.getByRole("button", { name: /Delhi, India/ }).click()
-  await page.getByLabel("Search check-in").fill(date(8))
-  await page.getByLabel("Search check-out").fill(date(10))
-  await page.getByRole("button", { name: "Next", exact: true }).click()
-  await page.getByLabel("Add adults").click()
   await page
-    .getByRole("dialog")
-    .getByRole("button", { name: "Search stays" })
-    .click()
+    .getByLabel("Choose your destination")
+    .selectOption({ label: "Delhi" })
+  await page.getByLabel("Home search check-in").fill(date(8))
+  await page.getByLabel("Home search checkout").fill(date(10))
+  await page.locator(".r-bloom-search-guests").click()
+  await page.getByRole("dialog").getByLabel("Add adults").click()
+  await page.getByRole("button", { name: "Done", exact: true }).click()
+  await page.getByRole("button", { name: "Search stays" }).click()
   await expect(page).toHaveURL(/destination=Delhi/)
   await expect(
     page.getByRole("heading", { name: "Stays in Delhi", exact: true })
@@ -65,6 +63,10 @@ test("account wishlist, private messages, quote and cancellable booking request"
   await expect(page.locator(".r-price-total")).toBeVisible()
   await page
     .getByRole("button", { name: "Request to book", exact: true })
+    .click()
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Confirm booking request", exact: true })
     .click()
   await expect(page).toHaveURL(/trips/)
   const trips = page
@@ -154,10 +156,15 @@ test("administrator routes load their requested sections and records", async ({
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(title)
     if (entity === "settings")
       await expect(page.getByLabel("Site announcement")).toBeVisible()
-    else
+    else {
+      const searchLabel =
+        entity === "bookings" ? "Search reservations" : `Search ${entity}`
       await expect(
-        page.getByLabel(`Search ${entity}`, { exact: true })
+        page.getByLabel(searchLabel, { exact: true })
       ).toBeVisible()
+      if (entity === "bookings")
+        await expect(page.getByLabel("Reservation status")).toBeVisible()
+    }
     await expect(page.locator(".r-table-wrap")).toBeVisible()
   }
   await page.goto("/admin/users")

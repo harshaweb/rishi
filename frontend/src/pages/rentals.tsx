@@ -1941,10 +1941,6 @@ function StayPage() {
       await price()
       return
     }
-    if (!session.user.verified) {
-      setError("Verify your email before requesting a stay.")
-      return
-    }
     if (identityNeeded) {
       setError("Complete DigiLocker verification before requesting this stay.")
       return
@@ -2375,9 +2371,9 @@ function StayPage() {
                 }}
               />
             </details>
-            {session?.user && !session.user.verified && <section className="r-digilocker-panel" aria-label="Email verification required">
-              <b>Verify your email to book</b>
-              <p>{session.emailConfigured ? "Open the verification email in your inbox, then refresh your verification status here." : "Verification email delivery is currently unavailable. Please contact support before booking."}</p>
+            {session?.user && !session.user.verified && <section className="r-digilocker-panel" aria-label="Optional email verification">
+              <b>Email verification is optional for booking</b>
+              <p>{session.emailConfigured ? "You can request a stay now. Verify your email if you want to confirm your account address and receive account messages." : "You can request a stay now. Email verification is currently unavailable."}</p>
               {session.emailConfigured && <button type="button" className="r-secondary r-full" disabled={busy} onClick={async () => {
                 setBusy(true)
                 try {
@@ -2583,7 +2579,7 @@ function StayPage() {
                 )
               }
               onClick={quote ? () => {
-                if (!session?.user || !session.user.verified) void reserve()
+                if (!session?.user) void reserve()
                 else setReviewBooking(true)
               } : price}
             >

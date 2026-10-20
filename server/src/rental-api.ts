@@ -334,7 +334,7 @@ rentalRouter.post(
         db
       )
     })
-    res.json({ message: "Email verified. You can now request stays." })
+    res.json({ message: "Your email address is verified." })
   })
 )
 rentalRouter.post(
@@ -548,8 +548,6 @@ rentalRouter.post(
         idempotencyKey: z.string().uuid(),
       })
       .parse(req.body)
-    if (!req.rentalUser!.verified)
-      throw fail(403, "Verify your email before requesting a stay.")
     const booking = await tx(async (db) => {
       const [p] = await rq(
         `SELECT * FROM "RentalProperty" WHERE id=$1 AND status='PUBLISHED' AND ${rentalRegionSql("")} FOR UPDATE`,

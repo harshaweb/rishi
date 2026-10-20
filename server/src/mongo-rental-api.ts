@@ -313,7 +313,7 @@ for (const kind of ["VERIFY", "RESET"])
       res.json({
         message:
           kind === "VERIFY"
-            ? "Email verified. You can now request stays."
+            ? "Your email address is verified."
             : "Password updated. Please log in again.",
       })
     })
@@ -495,8 +495,6 @@ r.post(
         expectedTotal: z.number().int().min(0).optional(),
       })
       .parse(req.body)
-    if (!req.rentalUser!.verified)
-      throw fail(403, "Verify your email before requesting a stay.")
     if (digilockerRequired() && !(await hasDigiLocker(uid(req))))
       throw fail(403, "Verify your DigiLocker account before requesting a stay.")
     const result = await tx(async (session) => {

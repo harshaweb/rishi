@@ -10,7 +10,9 @@ export default defineConfig({
   expect: { timeout: 10000 },
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
-    baseURL: "http://localhost:5173",
+    // Vite binds to 127.0.0.1 in dev.ts; using localhost can resolve to ::1
+    // on Windows and fail before the browser reaches the test server.
+    baseURL: "http://127.0.0.1:5173",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     ...devices["Desktop Chrome"],

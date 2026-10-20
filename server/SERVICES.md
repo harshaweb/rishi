@@ -47,9 +47,9 @@ Use approved **DigiLocker Requester API v1.12** credentials with Get User Detail
 
 Register this exact callback with the provider:
 
-`https://rishi-server-three.vercel.app/api/rental/digilocker/callback`
+`https://www.shivrajassociate.com/api/rental/digilocker/callback`
 
-Save `DIGILOCKER_CLIENT_ID` and `DIGILOCKER_CLIENT_SECRET` privately in Vercel Production. Keep `DIGILOCKER_REQUIRED=0` until credentials, callback approval and the real consent flow have been tested. Then set `DIGILOCKER_REQUIRED=1` and redeploy to enforce verification before bookings.
+Save the approved `DIGILOCKER_CLIENT_ID` and `DIGILOCKER_CLIENT_SECRET` privately in Vercel Production. DigiLocker issues these only after requester approval and API access is granted. Keep `DIGILOCKER_REQUIRED=0` until credentials, callback approval and a real consent flow have been tested. Then set `DIGILOCKER_REQUIRED=1` and redeploy to enforce verification before bookings.
 
 A consenting user must complete the real DigiLocker flow personally. Confirm return to the same flat, preserved booking dates and verified status; also check declined consent. The callback does not create a booking. This integration verifies control of an Aadhaar-linked DigiLocker account, not the authenticity of downloaded identity documents.
 

@@ -1650,6 +1650,68 @@ const entities: Record<string, [string, string]> = {
   audit: ["Audit", "action"],
 }
 r.get(
+  "/admin/bookings",
+  wrap(async (req, res) => {
+    const page = z.coerce.number().int().min(1).max(10000).parse(req.query.page || 1)
+    const search = z.string().max(100).parse(req.query.search || "")
+    const status = z.enum([
+      "ALL",
+      "PENDING",
+      "CONFIRMED",
+      "COMPLETED",
+      "CANCELLED",
+      "EXPIRED",
+    ]).parse(req.query.status || "ALL")
+    const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    const pipeline: Document[] = [
+      { $lookup: { from: "RentalProperty", localField: "propertyId", foreignField: "id", as: "property" } },
+      { $unwind: { path: "$property", preserveNullAndEmptyArrays: true } },
+      { $lookup: { from: "RentalUser", localField: "guestId", foreignField: "id", as: "guest" } },
+      { $unwind: { path: "$guest", preserveNullAndEmptyArrays: true } },
+      { $lookup: { from: "RentalProfile", localField: "guestId", foreignField: "userId", as: "guestProfile" } },
+      { $unwind: { path: "$guestProfile", preserveNullAndEmptyArrays: true } },
+    ]
+    const match: Document = {}
+    if (status !== "ALL") match.status = status
+    if (search) {
+      const pattern = { $regex: escaped, $options: "i" }
+      match.$or = [
+        { reference: pattern },
+        { "property.title": pattern },
+        { "property.city": pattern },
+        { "guest.name": pattern },
+        { "guest.email": pattern },
+      ]
+    }
+    if (Object.keys(match).length) pipeline.push({ $match: match })
+    pipeline.push(
+      {
+        $facet: {
+          items: [
+            { $sort: { createdAt: -1, _id: 1 } },
+            { $skip: (page - 1) * 30 },
+            { $limit: 30 },
+            {
+              $set: {
+                propertyTitle: "$property.title",
+                city: "$property.city",
+                guestName: "$guest.name",
+                guestEmail: "$guest.email",
+                guestPhone: "$guestProfile.phone",
+              },
+            },
+            { $project: { _id: 0, property: 0, guest: 0, guestProfile: 0, passwordHash: 0 } },
+          ],
+          total: [{ $count: "count" }],
+        },
+      },
+      { $project: { items: 1, total: { $ifNull: [{ $arrayElemAt: ["$total.count", 0] }, 0] } } },
+    )
+    const [result] = await c("Booking").aggregate(pipeline).toArray()
+    res.json({ items: result?.items || [], total: result?.total || 0, page, pageSize: 30 })
+  })
+)
+r.get(
   "/admin/:entity",
   wrap(async (req, res) => {
     const entity = entities[param(req, "entity")]

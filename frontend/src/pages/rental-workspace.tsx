@@ -1508,7 +1508,17 @@ const adminColumns: Record<string, string[]> = {
   users: ["name", "email", "role", "verified", "active", "createdAt"],
   hosts: ["userId", "bio", "status", "createdAt"],
   listings: ["title", "city", "type", "nightlyRate", "status", "demo"],
-  bookings: ["reference", "checkIn", "checkOut", "guests", "total", "status"],
+  bookings: [
+    "reference",
+    "propertyTitle",
+    "guestName",
+    "checkIn",
+    "checkOut",
+    "guests",
+    "total",
+    "paymentStatus",
+    "status",
+  ],
   payments: [
     "orderId",
     "paymentId",
@@ -1532,13 +1542,23 @@ const adminFieldLabels: Record<string, string> = {
   percent: "Discount %",
   demo: "Demo listing",
   paid: "Online payments",
+  propertyTitle: "Stay",
+  guestName: "Guest",
+  guestEmail: "Guest email",
+  guestPhone: "Guest phone",
+  paymentStatus: "Payment",
 }
 const adminLabel = (key: string) =>
   adminFieldLabels[key] || key.replace(/([A-Z])/g, " $1")
 function AdminValue({ field, value }: { field: string; value: unknown }) {
   if (value === null || value === undefined || value === "")
     return <span className="r-muted">—</span>
-  if (typeof value === "boolean" || field === "status" || field === "role") {
+  if (
+    typeof value === "boolean" ||
+    field === "status" ||
+    field === "paymentStatus" ||
+    field === "role"
+  ) {
     const text =
       typeof value === "boolean" ? (value ? "Yes" : "No") : String(value)
     const tone = [
@@ -1546,12 +1566,16 @@ function AdminValue({ field, value }: { field: string; value: unknown }) {
       "PUBLISHED",
       "APPROVED",
       "CONFIRMED",
+      "COMPLETED",
       "CAPTURED",
+      "PAID",
+      "PAY_AT_PROPERTY",
+      "REFUNDED",
       "RESOLVED",
       "PROCESSED",
     ].includes(text)
       ? "positive"
-      : ["PENDING", "CREATED", "OPEN"].includes(text)
+      : ["PENDING", "CREATED", "OPEN", "UNPAID", "REFUND_PENDING"].includes(text)
         ? "pending"
         : "neutral"
     return (
@@ -1586,7 +1610,7 @@ function Admin() {
     q = useRentalResource<{ items: Row[]; total: number }>(
       entity === "overview"
         ? null
-        : `/admin/${entity}?page=${entity === "settings" ? 1 : page}&search=${encodeURIComponent(entity === "settings" ? "" : search)}`
+        : `/admin/${entity}?page=${entity === "settings" ? 1 : page}&search=${encodeURIComponent(entity === "settings" ? "" : search)}${entity === "bookings" ? `&status=${reservationFilter}` : ""}`
     )
   const recent = useRentalResource<{ items: Row[]; total: number }>(
     entity === "overview" ? "/admin/bookings" : null
@@ -1937,7 +1961,8 @@ function Admin() {
                       <thead>
                         <tr>
                           <th>Reservation</th>
-                          <th>Check-in</th>
+                          <th>Stay &amp; guest</th>
+                          <th>Dates</th>
                           <th>Status</th>
                           <th>Total</th>
                         </tr>
@@ -1951,7 +1976,17 @@ function Admin() {
                               </Link>
                             </td>
                             <td>
+                              <div>
+                                <strong>{String(row.propertyTitle || "Stay")}</strong>
+                                <small className="r-muted">
+                                  {String(row.guestName || "Guest")} · {String(row.city || "")}
+                                </small>
+                              </div>
+                            </td>
+                            <td>
                               <AdminValue field="checkIn" value={row.checkIn} />
+                              <span> — </span>
+                              <AdminValue field="checkOut" value={row.checkOut} />
                             </td>
                             <td>
                               <AdminValue field="status" value={row.status} />
@@ -2065,14 +2100,38 @@ function Admin() {
             <div className="r-admin-toolbar">
               {entity !== "settings" && (
                 <label className="r-input-label">
-                  Search {entity}
-                  <input
+                    {entity === "bookings" ? "Search reservations" : `Search ${entity}`}
+                    <input
                     value={search}
+                      placeholder={entity === "bookings" ? "Reference, stay, guest, or email" : undefined}
                     onChange={(e) => {
                       setSearch(e.target.value)
                       setPage(1)
                     }}
                   />
+                </label>
+              )}
+              {entity === "bookings" && (
+                <label className="r-input-label">
+                  Reservation status
+                  <select
+                    value={reservationFilter}
+                    onChange={(event) => {
+                      setReservationFilter(event.target.value)
+                      setPage(1)
+                    }}
+                  >
+                    {[
+                      ["ALL", "All reservations"],
+                      ["PENDING", "Requests"],
+                      ["CONFIRMED", "Confirmed"],
+                      ["COMPLETED", "Completed"],
+                      ["CANCELLED", "Cancelled"],
+                      ["EXPIRED", "Expired"],
+                    ].map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
                 </label>
               )}
               <button

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "node -e \"process.exit(0)\"",
+  "buildCommand": "node -e \"process.exit(0)\"",
+  "outputDirectory": ".",
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "https://rishi-server-three.vercel.app/",
+      "permanent": false
+    },
+    {
+      "source": "/:path*",
+      "destination": "https://rishi-server-three.vercel.app/:path*",
+      "permanent": false
+    }
+  ]
+}

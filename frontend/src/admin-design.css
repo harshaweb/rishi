@@ -1,0 +1,281 @@
+.admin-shell {
+  background: #f4f6fb;
+}
+.admin-sidebar {
+  background: linear-gradient(165deg, #15213c, #0c1426 65%);
+  border-right: 1px solid #ffffff0c;
+}
+.admin-sidebar .logo-symbol {
+  border-radius: 9px;
+  box-shadow: 0 4px 18px #3157ff30;
+}
+.admin-sidebar > nav {
+  gap: 4px;
+}
+.admin-sidebar > nav > a {
+  border-radius: 8px;
+  font-size: 12px;
+  padding-block: 11px;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+.admin-sidebar > nav > a.active {
+  background: #3153b6;
+  color: #fff;
+  box-shadow: inset 3px 0 #9bb3ff;
+}
+.admin-sidebar > nav > a:hover {
+  background: #ffffff0d;
+  color: #fff;
+}
+.admin-sidebar > nav > a.active:hover {
+  background: #3153b6;
+}
+.admin-profile {
+  border-top-color: #ffffff14;
+}
+.admin-profile b {
+  color: #edf2ff;
+  font-size: 11px;
+}
+.admin-profile > span {
+  background: #243a65;
+  border: 1px solid #ffffff16;
+  border-radius: 10px;
+}
+.admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: #ffffffed;
+  backdrop-filter: blur(12px);
+}
+.admin-topbar > a {
+  padding: 8px 12px;
+  border: 1px solid #dfe6f3;
+  border-radius: 7px;
+  font-weight: 550;
+  background: #fff;
+  color: #385381;
+}
+.admin-content {
+  padding-top: 32px;
+}
+.admin-page-heading {
+  margin-bottom: 25px;
+}
+.admin-page-heading h1 {
+  color: #182a49;
+  font-weight: 650;
+  letter-spacing: -0.8px;
+}
+.admin-page-heading p {
+  font-size: 12px;
+  line-height: 1.8;
+}
+.workspace-welcome {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  padding: 32px;
+  margin-bottom: 24px;
+  border-radius: 16px;
+  background:
+    radial-gradient(ellipse at 95% 0, #3154a8, transparent 65%), #14254b;
+  border: 1px solid #2c4270;
+  color: #fff;
+}
+.workspace-kicker {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  color: #b2c6ff;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+}
+.workspace-welcome h2 {
+  font-size: 30px;
+  line-height: 1.2;
+  margin: 13px 0 10px;
+  letter-spacing: -0.8px;
+  color: #fff;
+}
+.workspace-welcome p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #c0cee7;
+  max-width: 520px;
+  margin: 0;
+}
+.workspace-welcome > .button {
+  flex-shrink: 0;
+  background: #fff;
+  border-color: #fff;
+  color: #203a76;
+  border-radius: 9px;
+  font-size: 12px;
+}
+.workspace-welcome > .button:hover {
+  background: #e8efff;
+  transform: none;
+}
+.metric-grid {
+  gap: 18px;
+  margin-bottom: 26px;
+}
+.metric-grid > div {
+  border-radius: 14px;
+  border-color: #e2e7f1;
+  padding: 22px;
+  box-shadow: 0 4px 14px #14264c04;
+}
+.metric-grid > div > span {
+  color: #516583;
+  font-size: 11px;
+  font-weight: 550;
+}
+.metric-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  background: #edf2ff;
+  color: #4768c1;
+}
+.metric-newLeads {
+  background: #fff4e6;
+  color: #b97622;
+}
+.metric-subscribers {
+  background: #e8f7f1;
+  color: #26876a;
+}
+.metric-applications {
+  background: #f2edff;
+  color: #8059b7;
+}
+.metric-grid strong {
+  color: #1d304e;
+  font-size: 36px;
+  font-weight: 650;
+  margin: 15px 0 8px;
+}
+.metric-grid small {
+  font-size: 10px;
+  color: #7f8da3;
+}
+.admin-panel {
+  border-radius: 14px;
+  border-color: #e1e7f1;
+  box-shadow: 0 4px 18px #14264c03;
+}
+.panel-heading {
+  padding-block: 22px;
+  background: #fff;
+}
+.panel-heading > h2 {
+  font-weight: 650;
+  color: #293d5b;
+}
+.admin-panel .empty-state {
+  padding-block: 38px;
+}
+.admin-panel .empty-state > svg {
+  padding: 12px;
+  box-sizing: content-box;
+  background: #f1f5fd;
+  border-radius: 16px;
+  color: #6384cc;
+}
+.admin-panel .empty-state h3 {
+  color: #2a3f60;
+}
+.admin-quick-links {
+  gap: 18px;
+}
+.admin-quick-links > a {
+  background: #fff;
+  border: 1px solid #dfe6f2;
+  border-radius: 14px;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+.admin-quick-links > a:hover {
+  border-color: #a8bce9;
+  box-shadow: 0 6px 20px #213b6d09;
+}
+.admin-quick-links > a > svg:first-child {
+  color: #577ac4;
+}
+.admin-quick-links h3 {
+  font-size: 15px;
+  color: #253d62;
+  font-weight: 600;
+}
+.admin-quick-links p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #6a7e9b;
+}
+.admin-shell a:focus-visible,
+.admin-shell button:focus-visible {
+  outline: 2px solid #7598ed;
+  outline-offset: 3px;
+}
+@media (max-width: 1000px) {
+  .workspace-welcome {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 22px;
+  }
+}
+@media (max-width: 600px) {
+  .admin-content {
+    padding: 25px 18px 45px;
+  }
+  .admin-page-heading h1 {
+    font-size: 24px;
+    line-height: 1.3;
+  }
+  .workspace-welcome {
+    padding: 24px;
+    border-radius: 13px;
+  }
+  .workspace-welcome h2 {
+    font-size: 27px;
+  }
+  .workspace-kicker {
+    font-size: 8px;
+    letter-spacing: 0.08em;
+  }
+  .metric-grid {
+    gap: 12px;
+  }
+  .metric-grid > div {
+    padding: 16px;
+  }
+  .metric-grid > div > span {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 11px;
+  }
+  .metric-grid strong {
+    font-size: 30px;
+  }
+  .admin-topbar > a {
+    font-size: 9px;
+    padding: 7px 8px;
+  }
+  .admin-panel .panel-heading {
+    gap: 12px;
+    padding-inline: 18px;
+  }
+}

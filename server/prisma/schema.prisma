@@ -1,0 +1,588 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL
+  WON
+  CLOSED
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  name         String
+  passwordHash String
+  role         Role       @default(STAFF)
+  active       Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  notes        LeadNote[]
+  logs         AuditLog[]
+}
+
+model Lead {
+  id           String     @id @default(cuid())
+  reference    String     @unique
+  submissionId String     @unique
+  name         String
+  email        String
+  phone        String
+  company      String
+  website      String?
+  service      String
+  budget       String
+  timeline     String
+  message      String
+  kind         String     @default("quote")
+  consentAt    DateTime
+  status       LeadStatus @default(NEW)
+  followUpAt   DateTime?
+  emailStatus  String     @default("not-configured")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  notes        LeadNote[]
+
+  @@index([status, createdAt])
+  @@index([email])
+}
+
+model LeadNote {
+  id        String   @id @default(cuid())
+  body      String
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+
+  @@index([leadId, createdAt])
+}
+
+model Service {
+  id             String             @id @default(cuid())
+  slug           String             @unique
+  title          String
+  headline       String
+  description    String
+  category       String
+  benefits       String[]
+  process        String[]
+  body           String
+  published      Boolean            @default(false)
+  seoTitle       String             @default("")
+  seoDescription String             @default("")
+  order          Int                @default(0)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  faqs           FAQ[]
+  projects       PortfolioProject[]
+
+  @@index([published, order])
+}
+
+model Industry {
+  id             String             @id @default(cuid())
+  slug           String             @unique
+  title          String
+  description    String
+  benefits       String[]
+  body           String
+  published      Boolean            @default(false)
+  seoTitle       String             @default("")
+  seoDescription String             @default("")
+  order          Int                @default(0)
+  projects       PortfolioProject[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([published, order])
+}
+
+model PortfolioProject {
+  id             String    @id @default(cuid())
+  slug           String    @unique
+  title          String
+  description    String
+  body           String
+  industry       String
+  industryId     String?
+  industryRecord Industry? @relation(fields: [industryId], references: [id], onDelete: SetNull)
+  services       String[]
+  serviceRecords Service[]
+  technologies   String[]
+  demo           Boolean   @default(true)
+  cover          String
+  gallery        String[]
+  url            String    @default("")
+  results        String    @default("")
+  seoTitle       String    @default("")
+  seoDescription String    @default("")
+  published      Boolean   @default(false)
+  order          Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([published, order])
+}
+
+model BlogCategory {
+  id    String     @id @default(cuid())
+  slug  String     @unique
+  title String
+  posts BlogPost[]
+}
+
+model BlogTag {
+  id    String     @id @default(cuid())
+  slug  String     @unique
+  title String
+  posts BlogPost[]
+}
+
+model BlogPost {
+  id             String        @id @default(cuid())
+  slug           String        @unique
+  title          String
+  description    String
+  body           String
+  categoryId     String?
+  category       BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags           BlogTag[]
+  status         PostStatus    @default(DRAFT)
+  cover          String
+  featured       Boolean       @default(false)
+  seoTitle       String        @default("")
+  seoDescription String        @default("")
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([status, publishedAt])
+}
+
+model FAQ {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  published Boolean  @default(false)
+  order     Int      @default(0)
+  serviceId String?
+  service   Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+}
+
+model TeamMember {
+  id        String  @id @default(cuid())
+  name      String
+  role      String
+  bio       String
+  photo     String  @default("")
+  published Boolean @default(false)
+  order     Int     @default(0)
+}
+
+model Job {
+  id           String           @id @default(cuid())
+  slug         String           @unique
+  title        String
+  location     String
+  type         String
+  description  String
+  body         String
+  published    Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  applications JobApplication[]
+}
+
+model JobApplication {
+  id        String      @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  portfolio String      @default("")
+  consentAt DateTime
+  jobId     String?
+  job       Job?        @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  resumeId  String?     @unique
+  resume    MediaAsset? @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  status    String      @default("NEW")
+  createdAt DateTime    @default(now())
+
+  @@index([createdAt])
+  @@index([email])
+}
+
+model NewsletterSubscriber {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  consentAt        DateTime
+  unsubscribeToken String   @unique @default(uuid())
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+}
+
+model MediaAsset {
+  id          String          @id @default(cuid())
+  filename    String
+  key         String          @unique
+  mime        String
+  size        Int
+  alt         String          @default("")
+  public      Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  application JobApplication?
+}
+
+model SiteSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  recordId  String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+
+// Rental marketplace models. PostgreSQL constraints and nightly inventory are authoritative.
+model RentalAmenity {
+  name                  String                  @id
+  RentalPropertyAmenity RentalPropertyAmenity[]
+}
+
+model RentalAudit {
+  id         String      @id
+  userId     String?
+  action     String
+  entityId   String
+  createdAt  DateTime    @default(now()) @db.Timestamptz(6)
+  RentalUser RentalUser? @relation(fields: [userId], references: [id], onUpdate: NoAction)
+}
+
+model RentalBlockedDate {
+  id             String         @id
+  propertyId     String
+  start          DateTime       @db.Date
+  end            DateTime       @db.Date
+  reason         String         @default("")
+  RentalProperty RentalProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model RentalBooking {
+  bookingMode String @default("HOST_APPROVAL")
+  cancellation String @default("FLEXIBLE")
+  bookingType String @default("OVERNIGHT")
+  durationHours Int?
+  arrivalTime DateTime @default(dbgenerated("'15:00:00'::time")) @db.Time(6)
+  departureTime DateTime @default(dbgenerated("'11:00:00'::time")) @db.Time(6)
+  id                 String               @id
+  reference          String               @unique
+  propertyId         String
+  guestId            String
+  checkIn            DateTime             @db.Date
+  checkOut           DateTime             @db.Date
+  guests             Int
+  status             String               @default("PENDING")
+  nightlySubtotal    Int
+  cleaningFee        Int
+  platformFee        Int
+  tax                Int
+  discount           Int                  @default(0)
+  total              Int
+  expiresAt          DateTime?            @db.Timestamptz(6)
+  paymentStatus      String               @default("UNPAID")
+  idempotencyKey     String               @unique
+  cancelReason       String               @default("")
+  createdAt          DateTime             @default(now()) @db.Timestamptz(6)
+  RentalUser         RentalUser           @relation(fields: [guestId], references: [id], onUpdate: NoAction)
+  RentalProperty     RentalProperty       @relation(fields: [propertyId], references: [id], onUpdate: NoAction)
+  RentalBookingNight RentalBookingNight[]
+  RentalPayment      RentalPayment?
+  RentalRefund       RentalRefund?
+  RentalReview       RentalReview?
+
+  @@index([propertyId, checkIn, checkOut, status], map: "RentalBooking_availability")
+  @@index([guestId, createdAt], map: "RentalBooking_guest")
+}
+
+model RentalBookingNight {
+  propertyId     String
+  night          DateTime       @db.Date
+  bookingId      String
+  RentalBooking  RentalBooking  @relation(fields: [bookingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  RentalProperty RentalProperty @relation(fields: [propertyId], references: [id], onUpdate: NoAction)
+
+  @@id([propertyId, night])
+  @@index([bookingId], map: "RentalBookingNight_booking")
+}
+
+model RentalCategory {
+  name           String           @id
+  active         Boolean          @default(true)
+  RentalProperty RentalProperty[]
+}
+
+model RentalConversation {
+  id                                                String          @id
+  propertyId                                        String
+  guestId                                           String
+  hostId                                            String
+  createdAt                                         DateTime        @default(now()) @db.Timestamptz(6)
+  RentalUser_RentalConversation_guestIdToRentalUser RentalUser      @relation("RentalConversation_guestIdToRentalUser", fields: [guestId], references: [id], onUpdate: NoAction)
+  RentalUser_RentalConversation_hostIdToRentalUser  RentalUser      @relation("RentalConversation_hostIdToRentalUser", fields: [hostId], references: [id], onUpdate: NoAction)
+  RentalProperty                                    RentalProperty  @relation(fields: [propertyId], references: [id], onUpdate: NoAction)
+  RentalMessage                                     RentalMessage[]
+
+  @@unique([propertyId, guestId])
+}
+
+model RentalCoupon {
+  code      String   @id
+  percent   Int
+  expiresAt DateTime @db.Timestamptz(6)
+  active    Boolean  @default(true)
+}
+
+model RentalHost {
+  userId     String     @id
+  bio        String
+  status     String     @default("PENDING")
+  createdAt  DateTime   @default(now()) @db.Timestamptz(6)
+  RentalUser RentalUser @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model RentalMessage {
+  id                 String             @id
+  conversationId     String
+  senderId           String
+  body               String
+  readAt             DateTime?          @db.Timestamptz(6)
+  createdAt          DateTime           @default(now()) @db.Timestamptz(6)
+  RentalConversation RentalConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  RentalUser         RentalUser         @relation(fields: [senderId], references: [id], onUpdate: NoAction)
+
+  @@index([conversationId, createdAt], map: "RentalMessage_thread")
+}
+
+model RentalNotification {
+  id          String     @id
+  userId      String
+  body        String
+  link        String
+  readAt      DateTime?  @db.Timestamptz(6)
+  emailStatus String     @default("NOT_CONFIGURED")
+  createdAt   DateTime   @default(now()) @db.Timestamptz(6)
+  RentalUser  RentalUser @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model RentalPayment {
+  id            String        @id
+  bookingId     String        @unique
+  orderId       String?       @unique
+  paymentId     String?       @unique
+  amount        Int
+  currency      String        @default("INR")
+  status        String        @default("CREATED")
+  createdAt     DateTime      @default(now()) @db.Timestamptz(6)
+  RentalBooking RentalBooking @relation(fields: [bookingId], references: [id], onUpdate: NoAction)
+}
+
+model RentalPaymentEvent {
+  id        String   @id
+  kind      String
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model RentalProfile {
+  userId        String     @id
+  phone         String     @default("")
+  photo         String     @default("")
+  notifications Boolean    @default(true)
+  RentalUser    RentalUser @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model RentalProperty {
+  checkInTime String @default("15:00")
+  checkOutTime String @default("11:00")
+  houseRules String @default("No parties or smoking indoors.")
+  discountPercent Int @default(0)
+  id                    String                  @id
+  slug                  String                  @unique
+  hostId                String
+  title                 String
+  city                  String
+  address               String
+  category              String
+  type                  String
+  description           String
+  nightlyRate           Int
+  cleaningFee           Int                     @default(0)
+  capacity              Int
+  bedrooms              Int
+  beds                  Int
+  bathrooms             Int
+  latitude              Float                   @default(0)
+  longitude             Float                   @default(0)
+  status                String                  @default("DRAFT")
+  approvedAt            DateTime?               @db.Timestamptz(6)
+  cancellation          String                  @default("FLEXIBLE")
+  instantBook           Boolean                 @default(false)
+  bookingMode           String                  @default("HOST_APPROVAL")
+  demo                  Boolean                 @default(false)
+  createdAt             DateTime                @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime                @default(now()) @db.Timestamptz(6)
+  RentalBlockedDate     RentalBlockedDate[]
+  RentalBooking         RentalBooking[]
+  RentalBookingNight    RentalBookingNight[]
+  RentalConversation    RentalConversation[]
+  RentalCategory        RentalCategory          @relation(fields: [category], references: [name], onDelete: NoAction, onUpdate: NoAction)
+  RentalUser            RentalUser              @relation(fields: [hostId], references: [id], onUpdate: NoAction)
+  RentalPropertyAmenity RentalPropertyAmenity[]
+  RentalPropertyImage   RentalPropertyImage[]
+  RentalReview          RentalReview[]
+  RentalWishlistItem    RentalWishlistItem[]
+
+  @@index([hostId], map: "RentalProperty_host")
+  @@index([status, city, nightlyRate, capacity], map: "RentalProperty_search")
+}
+
+model RentalPropertyAmenity {
+  propertyId     String
+  amenity        String
+  RentalAmenity  RentalAmenity  @relation(fields: [amenity], references: [name], onDelete: NoAction, onUpdate: NoAction)
+  RentalProperty RentalProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([propertyId, amenity])
+}
+
+model RentalPropertyImage {
+  id             String         @id
+  propertyId     String
+  url            String
+  alt            String         @default("")
+  position       Int            @default(0)
+  RentalProperty RentalProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([propertyId, position], map: "RentalPropertyImage_order")
+}
+
+model RentalRefund {
+  id            String        @id
+  bookingId     String        @unique
+  paymentId     String
+  providerId    String?       @unique
+  amount        Int
+  status        String        @default("PENDING")
+  createdAt     DateTime      @default(now()) @db.Timestamptz(6)
+  RentalBooking RentalBooking @relation(fields: [bookingId], references: [id], onUpdate: NoAction)
+}
+
+model RentalReport {
+  id         String     @id
+  userId     String
+  targetId   String
+  body       String
+  status     String     @default("OPEN")
+  createdAt  DateTime   @default(now()) @db.Timestamptz(6)
+  RentalUser RentalUser @relation(fields: [userId], references: [id], onUpdate: NoAction)
+}
+
+model RentalReview {
+  id             String         @id
+  bookingId      String         @unique
+  propertyId     String
+  userId         String
+  rating         Int
+  body           String
+  response       String         @default("")
+  visible        Boolean        @default(true)
+  createdAt      DateTime       @default(now()) @db.Timestamptz(6)
+  RentalBooking  RentalBooking  @relation(fields: [bookingId], references: [id], onUpdate: NoAction)
+  RentalProperty RentalProperty @relation(fields: [propertyId], references: [id], onUpdate: NoAction)
+  RentalUser     RentalUser     @relation(fields: [userId], references: [id], onUpdate: NoAction)
+}
+
+model RentalSetting {
+  key   String @id
+  value String
+}
+
+model RentalToken {
+  id         String     @id
+  userId     String
+  hash       String     @unique
+  kind       String
+  expiresAt  DateTime   @db.Timestamptz(6)
+  usedAt     DateTime?  @db.Timestamptz(6)
+  RentalUser RentalUser @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model RentalUser {
+  id                                                        String               @id
+  name                                                      String
+  email                                                     String               @unique
+  passwordHash                                              String
+  role                                                      String               @default("GUEST")
+  verified                                                  Boolean              @default(false)
+  active                                                    Boolean              @default(true)
+  sessionVersion                                            Int                  @default(0)
+  createdAt                                                 DateTime             @default(now()) @db.Timestamptz(6)
+  RentalAudit                                               RentalAudit[]
+  RentalBooking                                             RentalBooking[]
+  RentalConversation_RentalConversation_guestIdToRentalUser RentalConversation[] @relation("RentalConversation_guestIdToRentalUser")
+  RentalConversation_RentalConversation_hostIdToRentalUser  RentalConversation[] @relation("RentalConversation_hostIdToRentalUser")
+  RentalHost                                                RentalHost?
+  RentalMessage                                             RentalMessage[]
+  RentalNotification                                        RentalNotification[]
+  RentalProfile                                             RentalProfile?
+  RentalProperty                                            RentalProperty[]
+  RentalReport                                              RentalReport[]
+  RentalReview                                              RentalReview[]
+  RentalToken                                               RentalToken[]
+  RentalWishlist                                            RentalWishlist[]
+}
+
+model RentalWishlist {
+  id                 String               @id
+  userId             String
+  name               String
+  createdAt          DateTime             @default(now()) @db.Timestamptz(6)
+  RentalUser         RentalUser           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  RentalWishlistItem RentalWishlistItem[]
+}
+
+model RentalWishlistItem {
+  wishlistId     String
+  propertyId     String
+  RentalProperty RentalProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  RentalWishlist RentalWishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([wishlistId, propertyId])
+}

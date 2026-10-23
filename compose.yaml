@@ -1,0 +1,15 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    command: ["mongod", "--replSet", "omshivraj-local", "--bind_ip_all", "--port", "27018"]
+    ports:
+      - "127.0.0.1:27018:27018"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --port 27018 --quiet --eval 'try { rs.status().ok } catch (e) { rs.initiate({_id: \"omshivraj-local\", members: [{_id: 0, host: \"127.0.0.1:27018\"}]}).ok }'"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+volumes:
+  mongodb_data:

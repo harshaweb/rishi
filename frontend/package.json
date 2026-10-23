@@ -1,0 +1,10 @@
+{
+  "name": "omshivraj-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npm --prefix .. run dev:client",
+    "build": "npm --prefix .. run build",
+    "typecheck": "tsc -p tsconfig.app.json"
+  }
+}

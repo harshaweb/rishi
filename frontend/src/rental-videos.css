@@ -1,0 +1,51 @@
+/* Consistent cinema framing for compact and featured property films. */
+.r-design-refresh .r-mini-video { padding:0; gap:32px; border-radius:22px; background:#f1f4eb; border-color:#dce5d2; overflow:hidden; box-shadow:0 8px 28px #183d3105; }
+.r-mini-video-stage { display:grid; justify-items:center; gap:12px; width:184px; flex:0 0 184px; padding:18px; background:#1c3c30; }
+.r-mini-film-label { font-size:7px; letter-spacing:1.6px; color:#d9c99d; }
+.r-design-refresh .r-mini-video .r-short-video { width:144px; height:auto; margin:0; aspect-ratio:9/16; border-radius:12px; box-shadow:0 12px 20px #0a211c40; }
+.r-design-refresh .r-video-expand { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:34px; padding:7px 12px; background:transparent; border:1px solid #b7c4ac; color:#234c40; border-radius:50px; font-size:10px; cursor:pointer; }
+.r-design-refresh .r-video-expand:hover { background:#dfe8d5; }
+.r-design-refresh .r-mini-video-stage .r-video-expand { color:#eceddf; border-color:#57715e; font-size:9px; width:100%; }
+.r-design-refresh .r-mini-video-stage .r-video-expand:hover { background:#345443; }
+.r-mini-video-copy { display:grid; grid-template-columns:minmax(0,1fr) auto; flex:1; padding:28px 32px 28px 0; column-gap:40px; align-items:center; }
+.r-mini-video-copy > :not(a) { grid-column:1; }
+.r-mini-video-copy h3 { font-size:34px; line-height:1.12; margin:15px 0; }
+.r-mini-video-copy h3 em { color:#526d52; font-weight:400; }
+.r-mini-video-copy p { max-width:390px; font-size:13px; }
+.r-mini-video-meta { margin-top:18px; font-size:11px; gap:8px; }
+.r-design-refresh .r-mini-video-copy > a { grid-column:2; grid-row:1 / 5; margin:0; padding:14px 22px; border:1px solid #bdcbb3; border-radius:50px; background:#fffefa; font-size:12px; gap:22px; }
+.r-design-refresh .r-mini-video-copy > a:hover { background:#234c40; color:#fff; border-color:#234c40; }
+.r-design-refresh .r-section-video { position:relative; border-radius:26px; padding:44px clamp(26px,5vw,80px); background:linear-gradient(110deg,#edf2e6,#f9faf5); box-shadow:0 10px 32px #183d3105; }
+.r-design-refresh .r-section-video-stage { padding:22px; width:min(100%,350px); justify-self:center; background:#1c3c30; border:1px solid #345443; border-radius:26px; box-shadow:0 18px 36px -18px #142e2750; gap:18px; }
+.r-design-refresh .r-section-video-stage::before { display:none; }
+.r-design-refresh .r-video-film-label { color:#d9c99d; letter-spacing:2px; }
+.r-design-refresh .r-video-film-label > span { background:#d9c99d; }
+.r-design-refresh .r-section-video .r-short-video { outline:none; border-radius:15px; width:min(100%,250px); max-width:100%; box-shadow:0 8px 18px #0a211c40; }
+.r-video-stage-actions { display:flex; align-items:center; justify-content:space-between; gap:14px; width:100%; max-width:270px; }
+.r-design-refresh .r-video-stage-actions .r-video-stage-caption { color:#becdbb; font-size:10px; text-align:left; }
+.r-design-refresh .r-video-stage-actions .r-video-expand { color:#eceddf; border-color:#57715e; font-size:9px; }
+.r-design-refresh .r-video-stage-actions .r-video-expand:hover { background:#345443; }
+@media(max-width:900px) {
+ .r-mini-video-copy { grid-template-columns:minmax(0,1fr); }
+ .r-design-refresh .r-mini-video-copy > a { grid-column:1; grid-row:auto; justify-self:start; margin-top:20px; }
+}
+@media(max-width:600px) {
+ .r-design-refresh .r-mini-video { gap:18px; border-radius:18px; }
+ .r-mini-video-stage { width:138px; flex-basis:138px; padding:13px; gap:10px; }
+ .r-mini-film-label { font-size:6px; letter-spacing:.9px; }
+ .r-design-refresh .r-mini-video .r-short-video { width:112px; flex:none; border-radius:10px; }
+ .r-mini-video-copy { padding:18px 14px 18px 0; }
+ .r-mini-video-copy h3 { font-size:25px; margin:12px 0; letter-spacing:-.5px; }
+ .r-mini-video-meta { font-size:9px; gap:5px; margin-top:8px; }
+ .r-design-refresh .r-mini-video-copy > a { padding:10px 12px; gap:8px; font-size:10px; margin-top:16px; }
+ .r-design-refresh .r-mini-video-copy .r-kicker { font-size:7px; letter-spacing:1px; }
+ .r-design-refresh .r-section-video { padding:28px 22px; }
+ .r-design-refresh .r-section-video-stage { padding:18px; border-radius:22px; }
+}
+@media(max-width:360px) {
+ .r-design-refresh .r-mini-video { gap:12px; }
+ .r-mini-video-stage { width:128px; flex-basis:128px; padding:12px 8px; }
+ .r-mini-video-copy { padding-right:10px; }
+ .r-mini-video-copy h3 { font-size:22px; }
+ .r-design-refresh .r-mini-video-copy > a { padding:9px; font-size:9px; gap:5px; }
+}

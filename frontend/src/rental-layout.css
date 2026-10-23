@@ -1,0 +1,41 @@
+/* Use the available viewport width without a boxed desktop container. */
+.rental-app.r-design-refresh { --r-page-gutter:24px; width:100%; min-height:100svh; }
+.r-design-refresh .r-container { width:100%; max-width:none; padding-inline:var(--r-page-gutter); }
+.r-design-refresh .r-header-new .r-topbar { width:calc(100% - var(--r-page-gutter) * 2); max-width:none; }
+.r-design-refresh .r-header-new .r-search-wrap { width:calc(100% - var(--r-page-gutter) * 2); max-width:none; }
+.r-design-refresh .r-header-ribbon { padding-inline:var(--r-page-gutter); }
+.r-design-refresh .r-home { padding-top:0; }
+.r-design-refresh .r-home-intro { width:calc(100% + var(--r-page-gutter) * 2); margin-inline:calc(-1 * var(--r-page-gutter)); border-radius:0; min-height:clamp(560px,calc(100svh - 250px),900px); padding-inline:clamp(32px,5vw,100px); box-shadow:none; }
+.r-design-refresh .r-home-hero-content { max-width:720px; }
+.r-design-refresh .r-auth.r-container { max-width:1100px; margin-inline:auto; }
+@media(max-width:600px) {
+ .rental-app.r-design-refresh { --r-page-gutter:16px; }
+ .r-design-refresh .r-home-intro { min-height:610px; padding:36px 24px 24px; }
+ .r-design-refresh .r-home-hero-content { width:100%; }
+ .r-design-refresh .r-card-row,
+ .r-design-refresh .r-category-nav { margin-right:calc(-1 * var(--r-page-gutter)); padding-right:var(--r-page-gutter); }
+}
+/* Give account forms comfortable spacing and touch targets on small screens. */
+@media (max-width:760px) {
+ .r-design-refresh .r-auth { width:calc(100% - 32px); max-width:520px; margin:24px auto 48px; padding:0; min-height:0; background:transparent; border:0; }
+ .r-design-refresh .r-auth-form { box-sizing:border-box; width:100%; max-width:none; padding:28px 24px; border:1px solid #e2e6dc; border-radius:20px; background:#fffdfa; box-shadow:0 8px 30px #214f4108; }
+ .r-design-refresh .r-auth-form .r-kicker { font-size:10px; letter-spacing:1.8px; }
+ .r-design-refresh .r-auth-form h1 { font-size:30px; line-height:1.2; letter-spacing:-1px; margin:14px 0 16px; overflow-wrap:break-word; }
+ .r-design-refresh .r-auth-form > .r-muted { font-size:14px; line-height:1.7; margin:0 0 24px; }
+ .r-design-refresh .r-auth-form .r-form { margin:0; gap:18px; }
+ .r-design-refresh .r-auth-form .r-input-label { gap:8px; font-size:13px; line-height:1.5; margin:0; }
+ .r-design-refresh .r-auth-form .r-input-label input { box-sizing:border-box; width:100%; min-width:0; min-height:50px; padding:13px 14px; font-size:16px; line-height:1.4; border-radius:11px; }
+ .r-design-refresh .r-auth-form .r-input-label small { font-size:12px; line-height:1.5; }
+ .r-design-refresh .r-auth-form .r-check { align-items:flex-start; gap:10px; padding:5px 0; font-size:13px; line-height:1.7; }
+ .r-design-refresh .r-auth-form .r-check input { flex:0 0 18px; width:18px; height:18px; margin:2px 0 0; accent-color:#214f41; }
+ .r-design-refresh .r-auth-form .r-check span { min-width:0; }
+ .r-design-refresh .r-auth-form .r-check a { text-decoration:underline; text-underline-offset:3px; }
+ .r-design-refresh .r-auth-form .r-primary { display:flex; justify-content:center; align-items:center; min-height:50px; padding:14px 18px; font-size:15px; border-radius:12px; }
+ .r-design-refresh .r-auth-form .r-error, .r-design-refresh .r-auth-form [role=status] { font-size:14px; line-height:1.7; overflow-wrap:anywhere; }
+ .r-design-refresh .r-auth-links { margin-top:26px; padding-top:18px; gap:8px; line-height:1.6; }
+ .r-design-refresh .r-auth-links a { display:flex; align-items:center; min-height:44px; padding:6px 0; font-size:13px; text-underline-offset:3px; }
+}
+@media (max-width:360px) {
+ .r-design-refresh .r-auth-form { padding:24px 18px; }
+ .r-design-refresh .r-auth-form h1 { font-size:28px; }
+}
